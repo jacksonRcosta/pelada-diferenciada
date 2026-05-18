@@ -1,0 +1,12 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --navy: #1a3a6b; --navy2: #0d2347; --gold: #c9a84c;
+  --green: #15805e; --red: #c0392b;
+  --bg: #f0ede8; --sur: #fff; --brd: rgba(0,0,0,.09);
+  --txt: #1a1a18; --t2: #6b6b66; --t3: #aaa;
+}
+html { height: 100%; -webkit-text-size-adjust: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+       background: var(--bg); color: var(--txt); min-height: 100%; overflow-x: hidden; }
+button { font-family: inherit; cursor: pointer; border: none; outline: none; -webkit-appearance: none; }
+input, select { font-family: inherit; -webkit-appearance: none; appearance: none; outline: none; }
