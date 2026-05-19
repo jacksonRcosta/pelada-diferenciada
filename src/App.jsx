@@ -1,6 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useGameState } from './hooks/useGameState'
-import { useTimer } from './hooks/useTimer'
 import SyncBar from './components/SyncBar'
 import Toast from './components/Toast'
 import ScoutModal from './components/ScoutModal'
@@ -10,7 +9,6 @@ import TimesPage from './pages/TimesPage'
 import JogadoresPage from './pages/JogadoresPage'
 import RankingPage from './pages/RankingPage'
 import LOGO from './lib/logo'
-import { SCOUTS, TEAM_CFG } from './lib/constants'
 
 const TABS = [
   { id: 'partida',   label: 'Partida'    },
@@ -20,7 +18,6 @@ const TABS = [
   { id: 'ranking',   label: 'Ranking'    },
 ]
 
-// Check if opened via share link (view-only mode)
 const urlParams = new URLSearchParams(window.location.search)
 const VIEW_ONLY = urlParams.get('view') === '1'
 
@@ -29,8 +26,12 @@ export default function App() {
   const [tab, setTab] = useState('partida')
   const [scoutPid, setScoutPid] = useState(null)
 
-  // Sync status label
-  const syncLabel = { syncing: '⟳ sincronizando...', ok: '✓ sincronizado', error: '⚠ erro', idle: '● ao vivo' }
+  const syncLabel = {
+    syncing: '⟳ sincronizando...',
+    ok: '✓ sincronizado',
+    error: '⚠ erro',
+    idle: '● ao vivo'
+  }
 
   function share() {
     const url = window.location.origin + window.location.pathname + '?view=1'
@@ -43,7 +44,6 @@ export default function App() {
     }
   }
 
-  // Handle scout change (including scoreboard update for goals)
   function handleScoutChange(pid, sid, delta, newSc) {
     const newPlayers = state.players.map(p => p.id === pid ? { ...p, sc: newSc } : p)
     let scoreA = state.scoreA
@@ -58,14 +58,6 @@ export default function App() {
         if (ti === state.matchA && scoreA > 0) scoreA--
         else if (ti === state.matchB && scoreB > 0) scoreB--
       } else {
-        // delete (zerar) — recalculate from scratch
-        const allGoals = (sid) => newPlayers.reduce((sum, p) => {
-          const inA = state.teams?.[state.matchA]?.pids.includes(p.id)
-          const inB = state.teams?.[state.matchB]?.pids.includes(p.id)
-          if (inA) return sum
-          return sum
-        }, 0)
-        // Simpler: just subtract the removed count
         const removed = state.players.find(p => p.id === pid)?.sc[sid] || 0
         const ti2 = state.teams ? state.teams.findIndex(t => t.pids.includes(pid)) : -1
         if (ti2 === state.matchA) scoreA = Math.max(0, scoreA - removed)
@@ -76,16 +68,13 @@ export default function App() {
     update({ players: newPlayers, scoreA, scoreB })
   }
 
-  function handleCardChange(pid, cid, delta, newCards) {
+  function handleCardChange(pid, newCards) {
     const newPlayers = state.players.map(p => p.id === pid ? { ...p, cards: newCards } : p)
     update({ players: newPlayers })
   }
 
-  function openScout(pid) {
-    setScoutPid(pid)
-  }
+  function openScout(pid) { setScoutPid(pid) }
 
-  // Navigate to scout tab and open modal from ranking
   function openScoutFromRanking(pid) {
     setTab('scouts')
     setScoutPid(pid)
@@ -105,7 +94,9 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>{syncLabel[syncStatus] || ''}</div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>
+            {syncLabel[syncStatus] || ''}
+          </div>
           {!VIEW_ONLY && (
             <button onClick={share} style={{ background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.3)', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
               🔗 Compartilhar
