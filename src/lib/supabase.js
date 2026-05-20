@@ -1,55 +1,71 @@
-import { createClient } from '@supabase/supabase-js'
+// Conexão direta via fetch — sem biblioteca Supabase
+const URL  = 'https://ptvtnifhnzyayqmbpxtg.supabase.co'
+const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dnRuaWZobnp5YXlxbWJweHRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNTc4MzUsImV4cCI6MjA5NDYzMzgzNX0.umrGxWPIq87t5w3vr8N53QF46ijklRncac2HNStuJS8'
 
-// Credenciais diretas — funciona sem variáveis de ambiente
-const SUPABASE_URL = 'https://ptvtnifhnzyayqmbpxtg.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dnRuaWZobnp5YXlxbWJweHRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNTc4MzUsImV4cCI6MjA5NDYzMzgzNX0.umrGxWPIq87t5w3vr8N53QF46ijklRncac2HNStuJS8'
+const HEADERS = {
+  'apikey': KEY,
+  'Authorization': 'Bearer ' + KEY,
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+  'Prefer': 'return=minimal'
+}
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: false },
-})
-
-const TABLE = 'pd_state'
-const ROW   = 'main'
+export const supabase = null // não usado diretamente
 
 export async function loadState() {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('data')
-    .eq('id', ROW)
-    .single()
-  if (error) {
-    if (error.code === 'PGRST116') return null
-    console.error('loadState error:', error)
-    throw error
+  const res = await fetch(
+    `${URL}/rest/v1/pd_state?id=eq.main&select=data`,
+    { headers: { ...HEADERS, 'Prefer': 'return=representation' } }
+  )
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`loadState ${res.status}: ${err}`)
   }
-  return data?.data || null
+  const rows = await res.json()
+  return rows && rows.length > 0 ? rows[0].data : null
 }
 
 export async function saveState(obj) {
-  const { error } = await supabase
-    .from(TABLE)
-    .upsert(
-      { id: ROW, data: obj, updated_at: new Date().toISOString() },
-      { onConflict: 'id' }
-    )
-  if (error) {
-    console.error('saveState error:', error)
-    throw error
+  // Primeiro tenta UPDATE
+  const res = await fetch(
+    `${URL}/rest/v1/pd_state?id=eq.main`,
+    {
+      method: 'PATCH',
+      headers: HEADERS,
+      body: JSON.stringify({ data: obj, updated_at: new Date().toISOString() })
+    }
+  )
+  if (!res.ok) {
+    const err = await res.text()
+    // Se não existe, tenta INSERT
+    if (res.status === 404 || res.status === 406) {
+      const res2 = await fetch(
+        `${URL}/rest/v1/pd_state`,
+        {
+          method: 'POST',
+          headers: HEADERS,
+          body: JSON.stringify({ id: 'main', data: obj, updated_at: new Date().toISOString() })
+        }
+      )
+      if (!res2.ok) {
+        const err2 = await res2.text()
+        throw new Error(`saveState INSERT ${res2.status}: ${err2}`)
+      }
+    } else {
+      throw new Error(`saveState PATCH ${res.status}: ${err}`)
+    }
   }
 }
 
 export function subscribeToChanges(cb) {
-  const ch = supabase
-    .channel('pd_realtime')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: TABLE, filter: `id=eq.${ROW}` },
-      payload => {
-        if (payload.new?.data) cb(payload.new.data)
-      }
-    )
-    .subscribe(status => {
-      console.log('Realtime status:', status)
-    })
-  return () => supabase.removeChannel(ch)
+  // Polling a cada 5 segundos como fallback
+  const iv = setInterval(async () => {
+    try {
+      const state = await loadState()
+      if (state) cb(state)
+    } catch(e) {
+      // silencioso
+    }
+  }, 5000)
+  return () => clearInterval(iv)
 }
