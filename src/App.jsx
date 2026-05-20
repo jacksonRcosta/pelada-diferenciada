@@ -48,7 +48,6 @@ export default function App() {
     const newPlayers = state.players.map(p => p.id === pid ? { ...p, sc: newSc } : p)
     let scoreA = state.scoreA
     let scoreB = state.scoreB
-
     if ((sid === 'gol' || sid === 'golplaca') && !state.matchFinished) {
       const ti = state.teams ? state.teams.findIndex(t => t.pids.includes(pid)) : -1
       if (delta > 0) {
@@ -64,7 +63,6 @@ export default function App() {
         else if (ti2 === state.matchB) scoreB = Math.max(0, scoreB - removed)
       }
     }
-
     update({ players: newPlayers, scoreA, scoreB })
   }
 
@@ -74,17 +72,12 @@ export default function App() {
   }
 
   function openScout(pid) { setScoutPid(pid) }
-
-  function openScoutFromRanking(pid) {
-    setTab('scouts')
-    setScoutPid(pid)
-  }
+  function openScoutFromRanking(pid) { setTab('scouts'); setScoutPid(pid) }
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto', minHeight: '100vh', background: 'var(--bg)' }}>
       <SyncBar status={syncStatus} />
 
-      {/* HEADER */}
       <div style={{ background: 'linear-gradient(135deg,var(--navy),var(--navy2))', padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 11 }}>
         <img src={LOGO} alt="Logo" style={{ width: 50, height: 50, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,.3)', flexShrink: 0 }} />
         <div style={{ flex: 1 }}>
@@ -111,7 +104,6 @@ export default function App() {
         </div>
       )}
 
-      {/* TABBAR */}
       <div style={{ display: 'flex', background: 'var(--sur)', borderBottom: '2px solid #e5e2db', position: 'sticky', top: 0, zIndex: 50 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
@@ -124,7 +116,6 @@ export default function App() {
         ))}
       </div>
 
-      {/* PAGES */}
       <div style={{ padding: '12px 12px 100px' }}>
         {tab === 'partida'   && <PartidaPage   state={state} update={update} viewOnly={VIEW_ONLY} onOpenScout={openScout} />}
         {tab === 'scouts'    && <ScoutsPage    state={state} onOpenScout={openScout} />}
@@ -133,7 +124,6 @@ export default function App() {
         {tab === 'ranking'   && <RankingPage   state={state} update={update} viewOnly={VIEW_ONLY} onOpenScout={openScoutFromRanking} />}
       </div>
 
-      {/* SCOUT MODAL */}
       <ScoutModal
         pid={scoutPid}
         players={state.players}

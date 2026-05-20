@@ -1,35 +1,31 @@
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || ''
-const SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || ''
+// Credenciais diretas — funciona sem variáveis de ambiente
+const SUPABASE_URL = 'https://ptvtnifhnzyayqmbpxtg.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dnRuaWZobnp5YXlxbWJweHRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNTc4MzUsImV4cCI6MjA5NDYzMzgzNX0.umrGxWPIq87t5w3vr8N53QF46ijklRncac2HNStuJS8'
 
-export const supabase = SUPABASE_URL && SUPABASE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false },
-      realtime: { params: { eventsPerSecond: 10 } }
-    })
-  : null
+export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false },
+})
 
 const TABLE = 'pd_state'
 const ROW   = 'main'
 
 export async function loadState() {
-  if (!supabase) return null
   const { data, error } = await supabase
     .from(TABLE)
     .select('data')
     .eq('id', ROW)
     .single()
   if (error) {
-    // Se não existe o registro, retorna null (será criado no primeiro save)
     if (error.code === 'PGRST116') return null
+    console.error('loadState error:', error)
     throw error
   }
   return data?.data || null
 }
 
 export async function saveState(obj) {
-  if (!supabase) return
   const { error } = await supabase
     .from(TABLE)
     .upsert(
@@ -37,28 +33,22 @@ export async function saveState(obj) {
       { onConflict: 'id' }
     )
   if (error) {
-    console.error('Supabase save error:', error)
+    console.error('saveState error:', error)
     throw error
   }
 }
 
 export function subscribeToChanges(cb) {
-  if (!supabase) return () => {}
   const ch = supabase
     .channel('pd_realtime')
     .on(
       'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: TABLE,
-        filter: `id=eq.${ROW}`
-      },
+      { event: '*', schema: 'public', table: TABLE, filter: `id=eq.${ROW}` },
       payload => {
         if (payload.new?.data) cb(payload.new.data)
       }
     )
-    .subscribe((status) => {
+    .subscribe(status => {
       console.log('Realtime status:', status)
     })
   return () => supabase.removeChannel(ch)
