@@ -7,38 +7,35 @@ export function useGameState(viewOnly = false) {
   const [syncStatus, setSyncStatus] = useState('idle')
   const lastSaved = useRef('')
   const saveTimer = useRef(null)
-  const loaded = useRef(false)
 
-  // Carrega dados iniciais do banco
+  // Carrega dados iniciais
   useEffect(() => {
     setSyncStatus('syncing')
     loadState()
       .then(d => {
-        if (d && Object.keys(d).length > 0) {
+        if (d && d.players !== undefined) {
+          console.log('Dados carregados do banco:', JSON.stringify(d).slice(0, 200))
           setState({ ...INITIAL_STATE, ...d })
           lastSaved.current = JSON.stringify(d)
-          console.log('Estado carregado:', d)
         }
         setSyncStatus('ok')
         setTimeout(() => setSyncStatus('idle'), 2000)
-        loaded.current = true
       })
       .catch(err => {
         console.error('Erro ao carregar:', err)
         setSyncStatus('error')
-        loaded.current = true
       })
   }, [])
 
-  // Polling para sincronização em tempo real
+  // Polling — só atualiza se tiver dados válidos com players
   useEffect(() => {
     const unsub = subscribeToChanges(data => {
-      if (!data) return
+      if (!data || data.players === undefined) return
       const raw = JSON.stringify(data)
       if (raw !== lastSaved.current) {
+        console.log('Dados atualizados via polling')
         lastSaved.current = raw
         setState({ ...INITIAL_STATE, ...data })
-        console.log('Estado atualizado via polling:', data)
       }
     })
     return unsub
@@ -52,19 +49,20 @@ export function useGameState(viewOnly = false) {
         ? patch(prev)
         : { ...prev, ...patch }
 
-      // Salva com debounce de 400ms
+      // Log para debug
+      console.log('update chamado, players:', JSON.stringify(next.players))
+
       if (saveTimer.current) clearTimeout(saveTimer.current)
       saveTimer.current = setTimeout(async () => {
         const serialized = JSON.stringify(next)
         if (serialized === lastSaved.current) return
 
-        console.log('Salvando no banco:', next)
         setSyncStatus('syncing')
         try {
           await saveState(next)
           lastSaved.current = serialized
           setSyncStatus('ok')
-          console.log('Salvo com sucesso!')
+          console.log('Salvo! Players:', JSON.stringify(next.players))
           setTimeout(() => setSyncStatus('idle'), 2000)
         } catch (err) {
           console.error('Erro ao salvar:', err)
