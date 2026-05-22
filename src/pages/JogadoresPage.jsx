@@ -19,31 +19,54 @@ export default function JogadoresPage({ state, update, viewOnly }) {
   }
 
   function add() {
-    const n = name.trim()
-    if (!n) { showToast('Digite o nome do peladeiro'); return }
-    if (players.some(p => p.name.toLowerCase() === n.toLowerCase())) {
+    const trimmedName = name.trim()
+    if (!trimmedName) { showToast('Digite o nome do peladeiro'); return }
+    if (players.some(p => p.name.toLowerCase() === trimmedName.toLowerCase())) {
       showToast('Peladeiro já existe!'); return
     }
-    const newPlayer = { id: state.nextId, name: n, pos, sc: {}, cards: {} }
+
+    // Construir o player completo AQUI antes de qualquer coisa
+    const newPlayer = {
+      id: state.nextId,
+      name: trimmedName,
+      pos: pos,
+      sc: {},
+      cards: {}
+    }
+
+    console.log('Adicionando player:', JSON.stringify(newPlayer))
+
+    // Construir a lista nova AQUI também
     const newPlayers = [...players, newPlayer]
-    update({ players: newPlayers, nextId: state.nextId + 1 })
+    const newNextId = state.nextId + 1
+
+    console.log('Nova lista de players:', JSON.stringify(newPlayers))
+
+    // Chamar update com os valores já calculados
+    update({
+      players: newPlayers,
+      nextId: newNextId
+    })
+
     setName('')
-    showToast(`✓ ${n} adicionado!`)
+    showToast('✓ ' + trimmedName + ' adicionado!')
   }
 
   function del(pid) {
     const p = players.find(x => x.id === pid)
-    if (!window.confirm(`Remover ${p?.name}?`)) return
+    if (!window.confirm('Remover ' + (p?.name || '') + '?')) return
     const newPlayers = players.filter(x => x.id !== pid)
     const newTeams = teams
       ? teams.map(t => ({ ...t, pids: t.pids.filter(id => id !== pid) }))
       : teams
     update({ players: newPlayers, teams: newTeams })
-    showToast(`${p?.name} removido`)
+    showToast((p?.name || 'Jogador') + ' removido')
   }
 
   function savePos() {
-    const newPlayers = players.map(p => p.id === editPid ? { ...p, pos: editPos } : p)
+    const newPlayers = players.map(p =>
+      p.id === editPid ? { ...p, pos: editPos } : p
+    )
     update({ players: newPlayers })
     setEditPid(null)
     showToast('Posição atualizada!')
@@ -79,15 +102,21 @@ export default function JogadoresPage({ state, update, viewOnly }) {
               autoComplete="off"
             />
             <label style={labelStyle}>Posição</label>
-            <select value={pos} onChange={e => setPos(e.target.value)}
-              style={{ ...inputStyle, marginBottom: 0 }}>
-              {POSITIONS.map(p => <option key={p}>{p}</option>)}
+            <select
+              value={pos}
+              onChange={e => setPos(e.target.value)}
+              style={{ ...inputStyle, marginBottom: 0 }}
+            >
+              {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
-            <button onClick={add} style={{
-              width: '100%', padding: 14, borderRadius: 11,
-              background: 'var(--navy)', color: '#fff',
-              fontSize: 15, fontWeight: 700, marginTop: 10
-            }}>
+            <button
+              onClick={add}
+              style={{
+                width: '100%', padding: 14, borderRadius: 11,
+                background: 'var(--navy)', color: '#fff',
+                fontSize: 15, fontWeight: 700, marginTop: 10
+              }}
+            >
               + Adicionar Peladeiro
             </button>
           </div>
@@ -100,7 +129,7 @@ export default function JogadoresPage({ state, update, viewOnly }) {
 
       {players.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 12px', color: 'var(--t3)', fontSize: 13, lineHeight: 1.9 }}>
-          Nenhum peladeiro ainda.<br/>Adicione o primeiro peladeiro acima.
+          Nenhum peladeiro ainda.<br />Adicione o primeiro peladeiro acima.
         </div>
       )}
 
@@ -109,7 +138,7 @@ export default function JogadoresPage({ state, update, viewOnly }) {
         const ti = teamOf(p.id)
         const tc = ti >= 0 ? TEAM_CFG[ti % TEAM_CFG.length] : null
         return (
-          <div key={p.id} style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', marginBottom: 10, overflow: 'hidden' }}>
+          <div key={p.id} style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 13px' }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>
                 {initials(p.name)}
@@ -129,12 +158,14 @@ export default function JogadoresPage({ state, update, viewOnly }) {
                 <>
                   <button
                     onClick={() => { setEditPid(p.id); setEditPos(p.pos) }}
-                    style={{ background: '#e8eef8', color: 'var(--navy)', borderRadius: 9, fontSize: 12, fontWeight: 700, padding: '7px 10px', marginRight: 6 }}>
+                    style={{ background: '#e8eef8', color: 'var(--navy)', borderRadius: 9, fontSize: 12, fontWeight: 700, padding: '7px 10px', marginRight: 6 }}
+                  >
                     ✏ Pos.
                   </button>
                   <button
                     onClick={() => del(p.id)}
-                    style={{ background: '#fce8e8', color: 'var(--red)', borderRadius: 9, fontSize: 12, fontWeight: 700, padding: '7px 10px' }}>
+                    style={{ background: '#fce8e8', color: 'var(--red)', borderRadius: 9, fontSize: 12, fontWeight: 700, padding: '7px 10px' }}
+                  >
                     ✕
                   </button>
                 </>
@@ -144,22 +175,30 @@ export default function JogadoresPage({ state, update, viewOnly }) {
         )
       })}
 
-      {/* MODAL EDITAR POSIÇÃO */}
       <Modal open={!!editPid} onClose={() => setEditPid(null)}>
         <div style={{ padding: '13px 16px 12px', borderBottom: '1px solid rgba(0,0,0,.07)', position: 'relative' }}>
           <div style={{ fontSize: 17, fontWeight: 800 }}>
             {players.find(p => p.id === editPid)?.name}
           </div>
           <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 3 }}>Alterar posição</div>
-          <button onClick={() => setEditPid(null)} style={{ position: 'absolute', top: 11, right: 12, width: 30, height: 30, borderRadius: '50%', background: '#f0ede8', color: '#888', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          <button
+            onClick={() => setEditPid(null)}
+            style={{ position: 'absolute', top: 11, right: 12, width: 30, height: 30, borderRadius: '50%', background: '#f0ede8', color: '#888', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >✕</button>
         </div>
         <div style={{ padding: 14 }}>
           <label style={labelStyle}>Nova Posição</label>
-          <select value={editPos} onChange={e => setEditPos(e.target.value)}
-            style={{ ...inputStyle, width: '100%', marginBottom: 12 }}>
-            {POSITIONS.map(p => <option key={p}>{p}</option>)}
+          <select
+            value={editPos}
+            onChange={e => setEditPos(e.target.value)}
+            style={{ ...inputStyle, width: '100%', marginBottom: 12 }}
+          >
+            {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
-          <button onClick={savePos} style={{ width: '100%', padding: 14, borderRadius: 11, background: 'var(--navy)', color: '#fff', fontSize: 15, fontWeight: 700 }}>
+          <button
+            onClick={savePos}
+            style={{ width: '100%', padding: 14, borderRadius: 11, background: 'var(--navy)', color: '#fff', fontSize: 15, fontWeight: 700 }}
+          >
             Salvar Posição
           </button>
         </div>
