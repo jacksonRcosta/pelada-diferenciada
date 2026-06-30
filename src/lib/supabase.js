@@ -1,22 +1,20 @@
-const BASE_URL = 'https://ptvtnifhnzyayqmbpxtg.supabase.co/rest/v1'
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dnRuaWZobnp5YXlxbWJweHRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNTc4MzUsImV4cCI6MjA5NDYzMzgzNX0.umrGxWPIq87t5w3vr8N53QF46ijklRncac2HNStuJS8'
-const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dnRuaWZobnp5YXlxbWJweHRnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTA1NzgzNSwiZXhwIjoyMDk0NjMzODM1fQ.jgENfFrRp_lj4QyckNYygKwmIO8swJBjmjCosQXxjKg'
+// Configuração via variáveis de ambiente (CRA). Fallback mantém compatibilidade
+// caso o .env não esteja definido no ambiente de build.
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || 'https://ptvtnifhnzyayqmbpxtg.supabase.co'
+const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dnRuaWZobnp5YXlxbWJweHRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNTc4MzUsImV4cCI6MjA5NDYzMzgzNX0.umrGxWPIq87t5w3vr8N53QF46ijklRncac2HNStuJS8'
 
-// Leitura usa anon key (público)
-const READ_HEADERS = {
+const BASE_URL = SUPABASE_URL.replace(/\/$/, '') + '/rest/v1'
+
+// Leitura e escrita usam a anon key. A persistência é garantida pelas policies
+// RLS (leitura_publica / escrita_publica) — a service_role key NÃO deve viver
+// no frontend.
+const HEADERS = {
   'apikey': ANON_KEY,
   'Authorization': 'Bearer ' + ANON_KEY,
   'Content-Type': 'application/json',
   'Accept': 'application/json',
 }
-
-// Escrita usa service_role key (bypassa RLS)
-const WRITE_HEADERS = {
-  'apikey': SERVICE_KEY,
-  'Authorization': 'Bearer ' + SERVICE_KEY,
-  'Content-Type': 'application/json',
-  'Accept': 'application/json',
-}
+const READ_HEADERS = HEADERS
 
 export const supabase = null
 
@@ -52,12 +50,15 @@ export async function saveState(obj) {
 
   console.log('saveState players:', JSON.stringify(toSave.players).slice(0, 200))
 
+  // Upsert: insere a linha 'main' se não existir, ou atualiza se já existir.
+  // Evita o caso em que um PATCH em linha inexistente "salva" 0 registros.
   const res = await fetch(
-    BASE_URL + '/pd_state?id=eq.main',
+    BASE_URL + '/pd_state',
     {
-      method: 'PATCH',
-      headers: { ...WRITE_HEADERS, 'Prefer': 'return=minimal' },
+      method: 'POST',
+      headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify({
+        id: 'main',
         data: toSave,
         updated_at: new Date().toISOString()
       })
