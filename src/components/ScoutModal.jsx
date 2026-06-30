@@ -1,14 +1,15 @@
 import Modal from './Modal'
 import Avatar from './Avatar'
 import { SCOUTS, CARDS, TEAM_CFG } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, mergeScouts } from '../lib/utils'
 import { showToast } from './Toast'
 
 export default function ScoutModal({ pid, players, teams, open, onClose, onScoutChange, onCardChange, viewOnly }) {
   const p = players.find(x => x.id === pid)
   if (!p) return null
   const idx = players.indexOf(p)
-  const pt  = calcPoints(p.sc)
+  const pt  = calcPoints(p.sc)                                   // pontos da partida atual
+  const ptTotal = calcPoints(mergeScouts(p.scTotal, p.sc))       // total temporada + partida
   const ti  = teams ? teams.findIndex(t => t.pids.includes(pid)) : -1
   const tc  = ti >= 0 ? TEAM_CFG[ti % TEAM_CFG.length] : null
 
@@ -45,13 +46,16 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
             {tc && <span style={{ background:tc.color, color:'#fff', fontSize:10, fontWeight:700, padding:'1px 8px', borderRadius:8 }}>{teams[ti].name}</span>}
           </div>
         </div>
-        <div style={{ fontSize:15, fontWeight:700, padding:'4px 12px', borderRadius:16, ...ptStyle(pt) }}>{ptsLabel(pt)} pts</div>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:3 }}>
+          <div style={{ fontSize:15, fontWeight:700, padding:'4px 12px', borderRadius:16, ...ptStyle(pt) }}>{ptsLabel(pt)} pts</div>
+          <span style={{ fontSize:10, color:'var(--t3)' }}>partida · temp. {ptsLabel(ptTotal)}</span>
+        </div>
         <button onClick={onClose} style={{ position:'absolute', top:11, right:12, width:30, height:30, borderRadius:'50%', background:'#f0ede8', color:'#888', fontSize:16, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
       </div>
 
       {/* SCOUTS */}
       <div style={{ fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'var(--t3)', padding:'10px 14px 4px', background:'#f9f8f5', borderTop:'1px solid rgba(0,0,0,.06)', borderBottom:'1px solid rgba(0,0,0,.06)' }}>
-        Scouts (contam pontos)
+        Scouts da partida (contabilizam ao finalizar)
       </div>
       <div style={{ padding:'6px 14px' }}>
         {SCOUTS.map(s => {

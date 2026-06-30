@@ -31,7 +31,9 @@ export default function JogadoresPage({ state, update, viewOnly }) {
       name: trimmedName,
       pos: pos,
       sc: {},
-      cards: {}
+      cards: {},
+      scTotal: {},
+      cardsTotal: {}
     }
 
     console.log('Adicionando player:', JSON.stringify(newPlayer))

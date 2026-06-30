@@ -91,7 +91,7 @@ export default function TimesPage({ state, update, viewOnly }) {
           {teams.map((tm, t) => {
             const tc = TEAM_CFG[t % TEAM_CFG.length]
             const pls = tm.pids.map(id => players.find(p => p.id === id)).filter(Boolean)
-            const tp = pls.reduce((s, p) => s + calcPoints(p.sc), 0)
+            const tp = pls.reduce((s, p) => s + calcPoints(p.scTotal), 0)
             return (
               <div key={t} style={{ borderRadius: 14, border: `2px solid ${tc.color}`, marginBottom: 12, overflow: 'hidden', background: tc.bg }}>
                 <div style={{ padding: '10px 13px', display: 'flex', alignItems: 'center', gap: 7, background: tc.color }}>
@@ -106,7 +106,7 @@ export default function TimesPage({ state, update, viewOnly }) {
                 {pls.length === 0 && <div style={{ padding: '11px 13px', color: 'var(--t3)', fontSize: 13 }}>Nenhum jogador</div>}
                 {pls.map(p => {
                   const [bg, fg] = avatarColor(players.indexOf(p))
-                  const pt = calcPoints(p.sc)
+                  const pt = calcPoints(p.scTotal)
                   return (
                     <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid rgba(0,0,0,.06)', background: 'var(--sur)' }}>
                       <div style={{ width: 34, height: 34, borderRadius: '50%', background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>{initials(p.name)}</div>

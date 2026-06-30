@@ -14,7 +14,7 @@ export default function ScoutsPage({ state, onOpenScout }) {
       const tc = TEAM_CFG[t % TEAM_CFG.length]
       const pls = tm.pids.map(id => players.find(p => p.id === id)).filter(Boolean)
       pls.forEach(p => rendered.add(p.id))
-      groups.push({ label: tm.name, pls, tc, tp: pls.reduce((s, p) => s + calcPoints(p.sc), 0) })
+      groups.push({ label: tm.name, pls, tc, tp: pls.reduce((s, p) => s + calcPoints(p.scTotal), 0) })
     })
     const un = players.filter(p => !rendered.has(p.id))
     if (un.length) groups.push({ label: 'Sem Time', pls: un, tc: null, tp: 0 })

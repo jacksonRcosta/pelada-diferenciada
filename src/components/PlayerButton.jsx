@@ -3,16 +3,19 @@ import { SCOUTS, CARDS } from '../lib/constants'
 import { calcPoints, ptStyle, ptsLabel } from '../lib/utils'
 
 export default function PlayerButton({ player, index, onClick }) {
-  const pt = calcPoints(player.sc)
+  // Aba Scouts mostra o total da temporada (scouts já contabilizados).
+  const sc = player.scTotal || {}
+  const cards = player.cardsTotal || {}
+  const pt = calcPoints(sc)
   const pills = [
-    ...SCOUTS.filter(s => player.sc[s.id] > 0).map(s => (
+    ...SCOUTS.filter(s => sc[s.id] > 0).map(s => (
       <span key={s.id} style={{fontSize:10,fontWeight:700,padding:'2px 6px',borderRadius:6,background:s.c.bg,color:s.c.dk}}>
-        {player.sc[s.id]}× {s.name}
+        {sc[s.id]}× {s.name}
       </span>
     )),
-    ...CARDS.filter(cd => (player.cards||{})[cd.id]>0).map(cd => (
+    ...CARDS.filter(cd => cards[cd.id]>0).map(cd => (
       <span key={cd.id} style={{fontSize:10,fontWeight:700,padding:'2px 6px',borderRadius:6,background:cd.bg,color:cd.color}}>
-        {cd.emoji} {(player.cards||{})[cd.id]}
+        {cd.emoji} {cards[cd.id]}
       </span>
     ))
   ]

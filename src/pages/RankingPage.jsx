@@ -1,5 +1,5 @@
 import { SCOUTS, CARDS, TEAM_CFG } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, avatarColor, initials } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, avatarColor, initials, hasCounts, seasonEnded } from '../lib/utils'
 import { showToast } from '../components/Toast'
 
 export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
@@ -10,31 +10,49 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
     return teams.findIndex(t => t.pids.includes(pid))
   }
 
-  function resetAll() {
-    if (!window.confirm('Zerar todos os scouts e cartões?')) return
-    const newPlayers = players.map(p => ({ ...p, sc: {}, cards: {} }))
-    update({ players: newPlayers, scoreA: 0, scoreB: 0 })
-    showToast('Zerado!')
+  function endSeason() {
+    if (!window.confirm('Encerrar a temporada?\n\nIsto zera TODOS os scouts e cartões (total da temporada e partida atual). Esta ação não pode ser desfeita.')) return
+    const newPlayers = players.map(p => ({ ...p, sc: {}, cards: {}, scTotal: {}, cardsTotal: {} }))
+    update({ players: newPlayers, scoreA: 0, scoreB: 0, matchFinished: false })
+    showToast('🔄 Temporada encerrada e scouts zerados!')
   }
 
-  // Team ranking
+  // O ranking reflete o TOTAL DA TEMPORADA (scouts já contabilizados ao
+  // finalizar cada partida). A partida em andamento entra após finalizada.
   const teamRanking = teams && teams.length > 0
     ? teams.map((tm, t) => {
         const pls = tm.pids.map(id => players.find(p => p.id === id)).filter(Boolean)
-        return { name: tm.name, pts: pls.reduce((s, p) => s + calcPoints(p.sc), 0), ti: t }
+        return { name: tm.name, pts: pls.reduce((s, p) => s + calcPoints(p.scTotal), 0), ti: t }
       }).sort((a, b) => b.pts - a.pts)
     : []
 
   // Individual ranking
   const sorted = players.slice()
     .map((p, i) => ({ p, oi: i }))
-    .sort((a, b) => calcPoints(b.p.sc) - calcPoints(a.p.sc))
+    .sort((a, b) => calcPoints(b.p.scTotal) - calcPoints(a.p.scTotal))
+
+  const dateEnd = teams?.[0]?.dateEnd
+  const ended = seasonEnded(dateEnd)
+  const pendingMatch = players.some(p => hasCounts(p.sc) || hasCounts(p.cards))
 
   const medals = ['g', 's', 'b']
   const medalColors = { g: '#BA7517', s: '#888', b: '#993C1D' }
 
   return (
     <div>
+      {ended && (
+        <div style={{ background: '#FAEEDA', border: '1.5px solid #BA7517', borderRadius: 12, padding: '11px 14px', marginBottom: 10, fontSize: 12.5, color: '#633806', lineHeight: 1.5 }}>
+          🗓 <b>Temporada encerrada</b> — o período definido (até {new Date(dateEnd + 'T12:00:00').toLocaleDateString('pt-BR')}) já terminou.
+          {!viewOnly && ' Você pode zerar os scouts para iniciar uma nova temporada no botão abaixo.'}
+        </div>
+      )}
+
+      {pendingMatch && (
+        <div style={{ background: '#E8F1FB', border: '1.5px solid #155FA0', borderRadius: 12, padding: '11px 14px', marginBottom: 10, fontSize: 12.5, color: '#0C447C', lineHeight: 1.5 }}>
+          ⚽ Há scouts de uma <b>partida em andamento</b> ainda não contabilizados. Finalize a partida na aba <b>Partida</b> para somá-los ao total da temporada.
+        </div>
+      )}
+
       {teamRanking.length > 0 && (
         <>
           <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 7 }}>Placar por Times</div>
@@ -62,16 +80,18 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
       <div style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', marginBottom: 10, overflow: 'hidden' }}>
         {sorted.length === 0 && <div style={{ textAlign: 'center', padding: '36px 12px', color: 'var(--t3)', fontSize: 13 }}>Sem dados ainda.</div>}
         {sorted.map(({ p, oi }, i) => {
-          const pt = calcPoints(p.sc)
+          const sc = p.scTotal || {}
+          const cards = p.cardsTotal || {}
+          const pt = calcPoints(sc)
           const [bg, fg] = avatarColor(oi)
           const ti = teamOf(p.id)
           const tc = ti >= 0 ? TEAM_CFG[ti % TEAM_CFG.length] : null
           const pills = [
-            ...SCOUTS.filter(s => p.sc[s.id] > 0).map(s => (
-              <span key={s.id} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 7, fontWeight: 700, background: s.c.bg, color: s.c.dk }}>{p.sc[s.id]}× {s.name}</span>
+            ...SCOUTS.filter(s => sc[s.id] > 0).map(s => (
+              <span key={s.id} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 7, fontWeight: 700, background: s.c.bg, color: s.c.dk }}>{sc[s.id]}× {s.name}</span>
             )),
-            ...CARDS.filter(cd => (p.cards || {})[cd.id] > 0).map(cd => (
-              <span key={cd.id} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 7, fontWeight: 700, background: cd.bg, color: cd.color }}>{cd.emoji} {(p.cards || {})[cd.id]}</span>
+            ...CARDS.filter(cd => cards[cd.id] > 0).map(cd => (
+              <span key={cd.id} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 7, fontWeight: 700, background: cd.bg, color: cd.color }}>{cd.emoji} {cards[cd.id]}</span>
             ))
           ]
           return (
@@ -95,8 +115,8 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
       </div>
 
       {!viewOnly && (
-        <button onClick={resetAll} style={{ width: '100%', padding: 13, borderRadius: 10, background: 'transparent', border: '1.5px solid #ddd', color: '#aaa', fontSize: 14, fontWeight: 600 }}>
-          ↺ Zerar scouts e cartões
+        <button onClick={endSeason} style={{ width: '100%', padding: 13, borderRadius: 10, background: ended ? '#BA7517' : 'transparent', border: ended ? '1.5px solid #BA7517' : '1.5px solid #ddd', color: ended ? '#fff' : '#aaa', fontSize: 14, fontWeight: ended ? 700 : 600 }}>
+          🔄 Encerrar temporada (zerar scouts)
         </button>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { TEAM_CFG, CARDS } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, formatTime, initials, avatarColor } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, formatTime, initials, avatarColor, mergeScouts, hasCounts } from '../lib/utils'
 import { useTimer } from '../hooks/useTimer'
 import Modal from '../components/Modal'
 import { showToast } from '../components/Toast'
@@ -40,13 +40,31 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
     showToast(`Jogo ${mi + 1} ativo!`)
   }
 
+  function adjustScore(side, delta) {
+    if (viewOnly || matchFinished) return
+    if (side === 'A') update({ scoreA: Math.max(0, scoreA + delta) })
+    else update({ scoreB: Math.max(0, scoreB + delta) })
+  }
+
   function finishMatch() {
     if (!window.confirm(`Finalizar?\n${tmA?.name} ${scoreA} × ${scoreB} ${tmB?.name}`)) return
     timer.pause()
     const ns = schedule.map((g, i) => i === activeMatch ? { ...g, done: true, scoreA, scoreB } : g)
     const nh = [...(matchHistory || []), { nmA: tmA?.name, nmB: tmB?.name, sA: scoreA, sB: scoreB }]
-    update({ matchFinished: true, schedule: ns, matchHistory: nh })
-    showToast('🏁 Partida encerrada!')
+    // Contabiliza os scouts/cartões da partida no total da temporada e zera a
+    // partida atual para o próximo jogo.
+    const np = players.map(p => {
+      if (!hasCounts(p.sc) && !hasCounts(p.cards)) return p
+      return {
+        ...p,
+        scTotal: mergeScouts(p.scTotal, p.sc),
+        cardsTotal: mergeScouts(p.cardsTotal, p.cards),
+        sc: {},
+        cards: {},
+      }
+    })
+    update({ matchFinished: true, schedule: ns, matchHistory: nh, players: np })
+    showToast('🏁 Partida encerrada! Scouts contabilizados na temporada.')
   }
 
   function doSub(newPid) {
@@ -75,10 +93,18 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
       {tmA && tmB && (
         <div style={{ background:'linear-gradient(135deg,var(--navy),var(--navy2))', borderRadius:16, marginBottom:12, overflow:'hidden' }}>
           <div style={{ display:'flex', alignItems:'stretch' }}>
-            {[{ tm: tmA, score: scoreA }, { tm: tmB, score: scoreB }].map((s, i) => (
+            {[{ tm: tmA, score: scoreA, side: 'A' }, { tm: tmB, score: scoreB, side: 'B' }].map((s, i) => (
               <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', padding:'16px 10px 12px', gap:4 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:'rgba(255,255,255,.85)', textAlign:'center' }}>{s.tm.name}</div>
                 <div style={{ fontSize:56, fontWeight:900, color:'#fff', lineHeight:1, fontVariantNumeric:'tabular-nums' }}>{s.score}</div>
+                {!viewOnly && !matchFinished && (
+                  <div style={{ display:'flex', gap:8, marginTop:4 }}>
+                    <button onClick={() => adjustScore(s.side, -1)} aria-label={`Diminuir gol ${s.tm.name}`}
+                      style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,.18)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', fontSize:20, fontWeight:800, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>−</button>
+                    <button onClick={() => adjustScore(s.side, 1)} aria-label={`Aumentar gol ${s.tm.name}`}
+                      style={{ width:34, height:34, borderRadius:9, background:'rgba(255,255,255,.18)', border:'1px solid rgba(255,255,255,.3)', color:'#fff', fontSize:20, fontWeight:800, lineHeight:1, display:'flex', alignItems:'center', justifyContent:'center' }}>+</button>
+                  </div>
+                )}
               </div>
             ))}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'0 8px', fontSize:18, fontWeight:800, color:'rgba(255,255,255,.4)' }}>X</div>
@@ -88,6 +114,11 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
               ? `🏆 Encerrada — ${tmA.name} ${scoreA} × ${scoreB} ${tmB.name}`
               : `Jogo ${(activeMatch ?? -1) + 1} em andamento`}
           </div>
+          {!viewOnly && !matchFinished && (
+            <div style={{ textAlign:'center', padding:'0 8px 8px', fontSize:10, color:'rgba(255,255,255,.5)' }}>
+              O placar sobe ao marcar Gol no scout; use +/− para ajustes manuais.
+            </div>
+          )}
         </div>
       )}
 

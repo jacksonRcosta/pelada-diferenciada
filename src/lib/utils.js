@@ -28,3 +28,29 @@ export function shuffle(arr) {
   }
   return a
 }
+
+// Soma um ou mais mapas de contagem ({scoutId: qtd}) em um único mapa.
+// Usado para acumular os scouts da partida no total da temporada.
+export function mergeScouts(...maps) {
+  const out = {}
+  for (const m of maps) {
+    if (!m) continue
+    for (const k in m) {
+      const v = (out[k] || 0) + (m[k] || 0)
+      if (v !== 0) out[k] = v
+    }
+  }
+  return out
+}
+
+// Indica se um mapa de contagem possui alguma marcação > 0.
+export function hasCounts(m) {
+  return !!m && Object.values(m).some(v => v > 0)
+}
+
+// Verifica se a data fim da temporada (formato 'YYYY-MM-DD') já passou.
+export function seasonEnded(dateEnd) {
+  if (!dateEnd) return false
+  const end = new Date(dateEnd + 'T23:59:59')
+  return new Date() > end
+}

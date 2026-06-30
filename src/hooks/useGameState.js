@@ -2,6 +2,29 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { loadState, saveState, subscribeToChanges } from '../lib/supabase'
 import { INITIAL_STATE } from '../lib/constants'
 
+// Garante que todo jogador tenha os campos da partida atual (sc/cards) e os
+// acumulados da temporada (scTotal/cardsTotal). Migração retrocompatível:
+// dados antigos só possuíam `sc`/`cards` acumulados — esse acervo é tratado
+// como total da temporada e a partida atual passa a iniciar zerada.
+function normalizePlayers(players) {
+  return (players || []).map(p => {
+    if (p.scTotal === undefined && p.cardsTotal === undefined) {
+      return { ...p, scTotal: p.sc || {}, cardsTotal: p.cards || {}, sc: {}, cards: {} }
+    }
+    return {
+      ...p,
+      sc: p.sc || {},
+      cards: p.cards || {},
+      scTotal: p.scTotal || {},
+      cardsTotal: p.cardsTotal || {},
+    }
+  })
+}
+
+function normalizeState(data) {
+  return { ...INITIAL_STATE, ...data, players: normalizePlayers(data.players) }
+}
+
 export function useGameState(viewOnly = false) {
   const [state, setState] = useState(INITIAL_STATE)
   const [syncStatus, setSyncStatus] = useState('idle')
@@ -15,7 +38,7 @@ export function useGameState(viewOnly = false) {
       .then(d => {
         if (d && d.players !== undefined) {
           console.log('Dados carregados do banco:', JSON.stringify(d).slice(0, 200))
-          setState({ ...INITIAL_STATE, ...d })
+          setState(normalizeState(d))
           lastSaved.current = JSON.stringify(d)
         }
         setSyncStatus('ok')
@@ -35,7 +58,7 @@ export function useGameState(viewOnly = false) {
       if (raw !== lastSaved.current) {
         console.log('Dados atualizados via polling')
         lastSaved.current = raw
-        setState({ ...INITIAL_STATE, ...data })
+        setState(normalizeState(data))
       }
     })
     return unsub
