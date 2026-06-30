@@ -46,6 +46,7 @@ export async function saveState(obj) {
     scoreB:       obj.scoreB || 0,
     matchFinished: obj.matchFinished || false,
     matchHistory: obj.matchHistory || [],
+    seasonHistory: Array.isArray(obj.seasonHistory) ? obj.seasonHistory : [],
   }
 
   console.log('saveState players:', JSON.stringify(toSave.players).slice(0, 200))

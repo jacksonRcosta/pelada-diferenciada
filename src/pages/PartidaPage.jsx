@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { TEAM_CFG, CARDS } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, formatTime, initials, avatarColor, mergeScouts, hasCounts } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, formatTime, initials, avatarColor, mergeScouts, hasCounts, sortByPosition } from '../lib/utils'
 import { useTimer } from '../hooks/useTimer'
 import Modal from '../components/Modal'
 import { showToast } from '../components/Toast'
@@ -23,8 +23,8 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
   const tmB = matchB >= 0 && matchB < teams.length ? teams[matchB] : null
   const tcA = tmA ? TEAM_CFG[matchA % TEAM_CFG.length] : null
   const tcB = tmB ? TEAM_CFG[matchB % TEAM_CFG.length] : null
-  const plsA = tmA ? tmA.pids.map(id => players.find(p => p.id === id)).filter(Boolean) : []
-  const plsB = tmB ? tmB.pids.map(id => players.find(p => p.id === id)).filter(Boolean) : []
+  const plsA = tmA ? sortByPosition(tmA.pids.map(id => players.find(p => p.id === id)).filter(Boolean)) : []
+  const plsB = tmB ? sortByPosition(tmB.pids.map(id => players.find(p => p.id === id)).filter(Boolean)) : []
 
   function setMatch(mi) {
     const g = schedule[mi]

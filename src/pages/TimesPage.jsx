@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { TEAM_CFG, TEAM_NAMES } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, shuffle, buildSchedule, avatarColor, initials, imageFileToDataURL } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, shuffle, buildSchedule, avatarColor, initials, imageFileToDataURL, sortByPosition } from '../lib/utils'
 import { showToast } from '../components/Toast'
 
 export default function TimesPage({ state, update, viewOnly }) {
@@ -108,7 +108,7 @@ export default function TimesPage({ state, update, viewOnly }) {
         <>
           {teams.map((tm, t) => {
             const tc = TEAM_CFG[t % TEAM_CFG.length]
-            const pls = tm.pids.map(id => players.find(p => p.id === id)).filter(Boolean)
+            const pls = sortByPosition(tm.pids.map(id => players.find(p => p.id === id)).filter(Boolean))
             const tp = pls.reduce((s, p) => s + calcPoints(p.scTotal), 0)
             return (
               <div key={t} style={{ borderRadius: 14, border: `2px solid ${tc.color}`, marginBottom: 12, overflow: 'hidden', background: tc.bg }}>

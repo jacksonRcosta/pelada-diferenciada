@@ -1,5 +1,21 @@
 import { SCOUTS, AV_COLS } from './constants'
 
+// Ordem tática para exibir jogadores dentro de um time:
+// Goleiro → Zagueiro → Lateral → Meia → Atacante.
+export const POSITION_ORDER = ['Goleiro', 'Zagueiro', 'Lateral', 'Meia', 'Atacante']
+export function posRank(pos) {
+  const i = POSITION_ORDER.indexOf(pos)
+  return i < 0 ? POSITION_ORDER.length : i
+}
+// Ordena jogadores por posição (estável: mantém a ordem original para mesma
+// posição). Não muta o array recebido.
+export function sortByPosition(players) {
+  return players
+    .map((p, i) => [p, i])
+    .sort((a, b) => posRank(a[0].pos) - posRank(b[0].pos) || a[1] - b[1])
+    .map(([p]) => p)
+}
+
 export function initials(name) {
   return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()
 }

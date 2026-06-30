@@ -3,7 +3,7 @@ import { calcPoints, ptStyle, ptsLabel, avatarColor, initials, hasCounts, season
 import { showToast } from '../components/Toast'
 
 export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
-  const { players, teams } = state
+  const { players, teams, matchHistory, seasonHistory } = state
 
   function teamOf(pid) {
     if (!teams) return -1
@@ -11,10 +11,48 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
   }
 
   function endSeason() {
-    if (!window.confirm('Encerrar a temporada?\n\nIsto zera TODOS os scouts e cartões (total da temporada e partida atual). Esta ação não pode ser desfeita.')) return
+    if (!window.confirm('Encerrar a temporada?\n\nO ranking atual será GUARDADO no histórico e os scouts/cartões serão zerados para iniciar uma nova temporada. Esta ação não pode ser desfeita.')) return
+
+    // Snapshot da temporada que está sendo encerrada — guardado para consulta
+    // futura na seção "Temporadas anteriores".
+    const snapshot = {
+      endedAt: new Date().toISOString(),
+      dateStart: teams?.[0]?.dateStart || null,
+      dateEnd: teams?.[0]?.dateEnd || null,
+      teams: (teams || []).map((tm, t) => {
+        const pls = tm.pids.map(id => players.find(p => p.id === id)).filter(Boolean)
+        return { name: tm.name, pts: pls.reduce((s, p) => s + calcPoints(p.scTotal), 0) }
+      }).sort((a, b) => b.pts - a.pts),
+      players: players
+        .map(p => ({
+          name: p.name,
+          pos: p.pos,
+          team: (teams || []).find(t => t.pids.includes(p.id))?.name || null,
+          pts: calcPoints(p.scTotal),
+          sc: p.scTotal || {},
+          cards: p.cardsTotal || {},
+        }))
+        .sort((a, b) => b.pts - a.pts),
+      matchHistory: matchHistory || [],
+    }
+
     const newPlayers = players.map(p => ({ ...p, sc: {}, cards: {}, scTotal: {}, cardsTotal: {} }))
-    update({ players: newPlayers, scoreA: 0, scoreB: 0, matchFinished: false })
-    showToast('🔄 Temporada encerrada e scouts zerados!')
+    update({
+      players: newPlayers,
+      scoreA: 0, scoreB: 0, matchFinished: false,
+      matchHistory: [],
+      seasonHistory: [snapshot, ...(seasonHistory || [])],
+    })
+    showToast('🏆 Temporada arquivada no histórico e scouts zerados!')
+  }
+
+  const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('pt-BR') : '—'
+  const fmtPeriod = s => {
+    const a = s.dateStart ? new Date(s.dateStart + 'T12:00:00').toLocaleDateString('pt-BR') : null
+    const b = s.dateEnd ? new Date(s.dateEnd + 'T12:00:00').toLocaleDateString('pt-BR') : null
+    if (a && b) return `${a} → ${b}`
+    if (a) return `a partir de ${a}`
+    return `encerrada em ${fmtDate(s.endedAt)}`
   }
 
   // O ranking reflete o TOTAL DA TEMPORADA (scouts já contabilizados ao
@@ -114,9 +152,61 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
         })}
       </div>
 
+      {(seasonHistory || []).length > 0 && (
+        <>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', margin: '16px 0 7px' }}>
+            Temporadas anteriores ({seasonHistory.length})
+          </div>
+          {seasonHistory.map((s, si) => {
+            const champ = s.teams?.[0]
+            const top = s.players?.[0]
+            return (
+              <details key={si} style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', marginBottom: 10, overflow: 'hidden' }}>
+                <summary style={{ listStyle: 'none', cursor: 'pointer', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 20 }}>🏆</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800 }}>{champ ? champ.name : 'Temporada'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>{fmtPeriod(s)}</div>
+                  </div>
+                  <span style={{ fontSize: 11, color: 'var(--t3)' }}>ver ▾</span>
+                </summary>
+                <div style={{ borderTop: '1px solid var(--brd)', padding: '10px 14px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: .8, textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 6 }}>Classificação de times</div>
+                  {(s.teams || []).map((t, ti) => (
+                    <div key={ti} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
+                      <span style={{ width: 18, fontWeight: 800, color: medalColors[medals[ti]] || '#ccc' }}>{ti + 1}</span>
+                      <span style={{ flex: 1, fontWeight: 700 }}>{t.name}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, ...ptStyle(t.pts) }}>{ptsLabel(t.pts)}</span>
+                    </div>
+                  ))}
+                  {top && (
+                    <>
+                      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: .8, textTransform: 'uppercase', color: 'var(--t3)', margin: '10px 0 6px' }}>Artilharia / pontuação</div>
+                      {s.players.slice(0, 5).map((p, pi) => (
+                        <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
+                          <span style={{ width: 18, fontWeight: 800, color: medalColors[medals[pi]] || '#ccc' }}>{pi + 1}</span>
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ fontWeight: 700 }}>{p.name}</span>
+                            <span style={{ color: 'var(--t3)', fontSize: 11 }}> · {p.pos}{p.team ? ' · ' + p.team : ''}</span>
+                          </span>
+                          <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, ...ptStyle(p.pts) }}>{ptsLabel(p.pts)}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {(s.matchHistory || []).length > 0 && (
+                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 10 }}>⚽ {s.matchHistory.length} jogo(s) disputado(s) na temporada.</div>
+                  )}
+                </div>
+              </details>
+            )
+          })}
+        </>
+      )}
+
       {!viewOnly && (
-        <button onClick={endSeason} style={{ width: '100%', padding: 13, borderRadius: 10, background: ended ? '#BA7517' : 'transparent', border: ended ? '1.5px solid #BA7517' : '1.5px solid #ddd', color: ended ? '#fff' : '#aaa', fontSize: 14, fontWeight: ended ? 700 : 600 }}>
-          🔄 Encerrar temporada (zerar scouts)
+        <button onClick={endSeason} style={{ width: '100%', padding: 13, borderRadius: 10, marginTop: 6, background: ended ? '#BA7517' : 'transparent', border: ended ? '1.5px solid #BA7517' : '1.5px solid #ddd', color: ended ? '#fff' : '#aaa', fontSize: 14, fontWeight: ended ? 700 : 600 }}>
+          🏆 Encerrar temporada (arquivar e zerar scouts)
         </button>
       )}
     </div>
