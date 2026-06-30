@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { TEAM_CFG, CARDS } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, formatTime, initials, avatarColor, mergeScouts, hasCounts, sortByPosition } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, formatTime, initials, avatarColor, mergeScouts, hasCounts, sortByPosition, buildSchedule } from '../lib/utils'
 import { useTimer } from '../hooks/useTimer'
 import Modal from '../components/Modal'
 import { showToast } from '../components/Toast'
@@ -65,6 +65,38 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
     })
     update({ matchFinished: true, schedule: ns, matchHistory: nh, players: np })
     showToast('🏁 Partida encerrada! Scouts contabilizados na temporada.')
+  }
+
+  function finishRound() {
+    if (!window.confirm('Finalizar a rodada?\n\nIsto encerra os jogos do dia: zera a agenda e o placar, mantém os times sorteados e REMOVE os convidados. Deseja continuar?')) return
+    timer.pause()
+    // Preserva no total da temporada os scouts/cartões ainda pendentes da
+    // partida em andamento dos jogadores fixos; convidados são descartados.
+    const kept = players.filter(p => !p.guest).map(p => {
+      if (!hasCounts(p.sc) && !hasCounts(p.cards)) return { ...p, sc: {}, cards: {} }
+      return {
+        ...p,
+        scTotal: mergeScouts(p.scTotal, p.sc),
+        cardsTotal: mergeScouts(p.cardsTotal, p.cards),
+        sc: {}, cards: {},
+      }
+    })
+    const keptIds = new Set(kept.map(p => p.id))
+    const nt = (teams || []).map(t => ({ ...t, pids: t.pids.filter(id => keptIds.has(id)) }))
+    const sched = buildSchedule(nt.length)
+    update({
+      players: kept,
+      teams: nt,
+      schedule: sched,
+      activeMatch: sched.length ? 0 : -1,
+      matchA: sched[0]?.a ?? -1,
+      matchB: sched[0]?.b ?? -1,
+      scoreA: 0, scoreB: 0,
+      matchFinished: false,
+      matchHistory: [],
+    })
+    timer.reset()
+    showToast('🔚 Rodada finalizada! Agenda zerada e convidados removidos.')
   }
 
   function doSub(newPid) {
@@ -170,7 +202,7 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontSize:13, fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{pp.name}</div>
-                        <div style={{ fontSize:10, color:'var(--t3)' }}>{pp.pos}{ctags ? ' ' + ctags : ''}</div>
+                        <div style={{ fontSize:10, color:'var(--t3)' }}>{pp.guest ? '🎟 ' : ''}{pp.pos}{ctags ? ' ' + ctags : ''}</div>
                       </div>
                       <div style={{ fontSize:11, fontWeight:700, padding:'2px 7px', borderRadius:9, flexShrink:0, ...ptStyle(pt) }}>{ptsLabel(pt)}</div>
                     </button>
@@ -254,6 +286,13 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
             ))}
           </div>
         </>
+      )}
+
+      {/* FINALIZAR RODADA */}
+      {!viewOnly && tmA && tmB && (
+        <button onClick={finishRound} style={{ width:'100%', padding:13, borderRadius:11, marginTop:14, background:'transparent', border:'1.5px solid var(--navy)', color:'var(--navy)', fontSize:14, fontWeight:700 }}>
+          🔚 Finalizar rodada
+        </button>
       )}
 
       {/* MODAL SUBSTITUIÇÃO */}

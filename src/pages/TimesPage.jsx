@@ -145,7 +145,7 @@ export default function TimesPage({ state, update, viewOnly }) {
                   return (
                     <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid rgba(0,0,0,.06)', background: 'var(--sur)' }}>
                       <div style={{ width: 34, height: 34, borderRadius: '50%', background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>{initials(p.name)}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.pos}</div></div>
+                      <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.guest ? '🎟 ' : ''}{p.pos}</div></div>
                       <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, marginRight: 7, flexShrink: 0, ...ptStyle(pt) }}>{ptsLabel(pt)}</span>
                       {!viewOnly && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -172,7 +172,7 @@ export default function TimesPage({ state, update, viewOnly }) {
                   return (
                     <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid rgba(0,0,0,.06)' }}>
                       <div style={{ width: 34, height: 34, borderRadius: '50%', background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>{initials(p.name)}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.pos}</div></div>
+                      <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.guest ? '🎟 ' : ''}{p.pos}</div></div>
                       <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, marginRight: 7, flexShrink: 0, ...ptStyle(pt) }}>{ptsLabel(pt)}</span>
                       {!viewOnly && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>

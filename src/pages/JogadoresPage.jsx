@@ -8,6 +8,7 @@ export default function JogadoresPage({ state, update, viewOnly }) {
   const { players, teams } = state
   const [name, setName] = useState('')
   const [pos, setPos]   = useState('Atacante')
+  const [isGuest, setIsGuest] = useState(false)
   const [editPid, setEditPid] = useState(null)
   const [editPos, setEditPos] = useState('Atacante')
 
@@ -30,6 +31,7 @@ export default function JogadoresPage({ state, update, viewOnly }) {
       id: state.nextId,
       name: trimmedName,
       pos: pos,
+      guest: isGuest,
       sc: {},
       cards: {},
       scTotal: {},
@@ -51,7 +53,7 @@ export default function JogadoresPage({ state, update, viewOnly }) {
     })
 
     setName('')
-    showToast('✓ ' + trimmedName + ' adicionado!')
+    showToast((isGuest ? '🎟 Convidado ' : '✓ ') + trimmedName + ' adicionado!')
   }
 
   function del(pid) {
@@ -111,15 +113,19 @@ export default function JogadoresPage({ state, update, viewOnly }) {
             >
               {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, cursor: 'pointer', fontSize: 13, color: 'var(--t2)', fontWeight: 600 }}>
+              <input type="checkbox" checked={isGuest} onChange={e => setIsGuest(e.target.checked)} style={{ width: 18, height: 18 }} />
+              🎟 Convidado (vale só nesta rodada)
+            </label>
             <button
               onClick={add}
               style={{
                 width: '100%', padding: 14, borderRadius: 11,
-                background: 'var(--navy)', color: '#fff',
+                background: isGuest ? '#B7770D' : 'var(--navy)', color: '#fff',
                 fontSize: 15, fontWeight: 700, marginTop: 10
               }}
             >
-              + Adicionar Peladeiro
+              {isGuest ? '🎟 Adicionar Convidado' : '+ Adicionar Peladeiro'}
             </button>
           </div>
         </>
@@ -148,6 +154,11 @@ export default function JogadoresPage({ state, update, viewOnly }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
                   {p.name}
+                  {p.guest && (
+                    <span style={{ background: '#FAEEDA', color: '#633806', border: '1px solid #B7770D', fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 6 }}>
+                      🎟 Convidado
+                    </span>
+                  )}
                   {tc && (
                     <span style={{ background: tc.color, color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 6 }}>
                       {teams[ti].name}
