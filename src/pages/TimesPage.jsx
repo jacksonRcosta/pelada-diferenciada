@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { TEAM_CFG, TEAM_NAMES } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, shuffle, buildSchedule, avatarColor, initials } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, shuffle, buildSchedule, avatarColor, initials, imageFileToDataURL } from '../lib/utils'
 import { showToast } from '../components/Toast'
 
 export default function TimesPage({ state, update, viewOnly }) {
@@ -49,6 +49,24 @@ export default function TimesPage({ state, update, viewOnly }) {
     showToast(`${p?.name} → ${nt[toIdx].name}`)
   }
 
+  async function setTeamImg(idx, file) {
+    if (!file) return
+    try {
+      const img = await imageFileToDataURL(file)
+      update({ teams: teams.map((t, i) => i === idx ? { ...t, img } : t) })
+      showToast('Imagem do time atualizada!')
+    } catch (e) {
+      showToast('Não foi possível carregar a imagem')
+    }
+  }
+
+  function removeTeamImg(idx) {
+    update({ teams: teams.map((t, i) => i === idx ? { ...t, img: null } : t) })
+  }
+
+  // Jogadores cadastrados que ainda não pertencem a nenhum time.
+  const unassigned = teams ? players.filter(p => !teams.some(t => t.pids.includes(p.id))) : []
+
   const inp = { padding: '11px 12px', fontSize: 16, border: '1.5px solid #e0ddd6', borderRadius: 10, background: '#f9f8f5', color: 'var(--txt)', textAlign: 'center' }
   const lbl = { display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: '.8px', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 5 }
 
@@ -94,12 +112,29 @@ export default function TimesPage({ state, update, viewOnly }) {
             const tp = pls.reduce((s, p) => s + calcPoints(p.scTotal), 0)
             return (
               <div key={t} style={{ borderRadius: 14, border: `2px solid ${tc.color}`, marginBottom: 12, overflow: 'hidden', background: tc.bg }}>
-                <div style={{ padding: '10px 13px', display: 'flex', alignItems: 'center', gap: 7, background: tc.color }}>
+                <div style={{ padding: '10px 13px', display: 'flex', alignItems: 'center', gap: 9, background: tc.color }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', background: 'rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 800 }}>
+                      {tm.img
+                        ? <img src={tm.img} alt={tm.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : initials(tm.name)}
+                    </div>
+                    {!viewOnly && (
+                      <label style={{ position: 'absolute', bottom: -3, right: -3, width: 18, height: 18, borderRadius: '50%', background: '#fff', color: tc.color, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,.3)' }} title="Adicionar imagem do time">
+                        📷
+                        <input type="file" accept="image/*" onChange={e => { setTeamImg(t, e.target.files?.[0]); e.target.value = '' }} style={{ display: 'none' }} />
+                      </label>
+                    )}
+                  </div>
                   {viewOnly
                     ? <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', flex: 1 }}>{tm.name}</span>
                     : <input defaultValue={tm.name} onBlur={e => rename(t, e.target.value)} onClick={e => e.stopPropagation()}
                         style={{ background: 'transparent', border: 'none', borderBottom: '2px solid rgba(255,255,255,.4)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', flex: 1, padding: '2px 0', outline: 'none' }} />
                   }
+                  {!viewOnly && tm.img && (
+                    <button onClick={() => removeTeamImg(t)} title="Remover imagem"
+                      style={{ background: 'rgba(255,255,255,.2)', border: 'none', color: '#fff', borderRadius: 6, fontSize: 11, fontWeight: 700, padding: '3px 6px' }}>✕</button>
+                  )}
                   <span style={{ fontSize: 11, color: 'rgba(255,255,255,.7)' }}>{pls.length} jog.</span>
                   <span style={{ fontSize: 13, fontWeight: 700, padding: '3px 10px', borderRadius: 13, background: 'rgba(255,255,255,.25)', color: '#fff' }}>{ptsLabel(tp)} pts</span>
                 </div>
@@ -127,6 +162,34 @@ export default function TimesPage({ state, update, viewOnly }) {
               </div>
             )
           })}
+          {unassigned.length > 0 && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', margin: '14px 0 7px' }}>Sem time ({unassigned.length})</div>
+              <div style={{ borderRadius: 14, border: '2px dashed #cfcabf', marginBottom: 12, overflow: 'hidden', background: 'var(--sur)' }}>
+                {unassigned.map(p => {
+                  const [bg, fg] = avatarColor(players.indexOf(p))
+                  const pt = calcPoints(p.scTotal)
+                  return (
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid rgba(0,0,0,.06)' }}>
+                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>{initials(p.name)}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.pos}</div></div>
+                      <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, marginRight: 7, flexShrink: 0, ...ptStyle(pt) }}>{ptsLabel(pt)}</span>
+                      {!viewOnly && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {teams.map((tm, k) => (
+                            <button key={k} onClick={() => move(p.id, k)} style={{ background: '#f0ede8', border: '1px solid #ddd', color: '#444', borderRadius: 7, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>
+                              → {tm.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
           <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', margin: '14px 0 7px' }}>Agenda</div>
           <div style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', overflow: 'hidden' }}>
             {schedule.map((g, i) => {

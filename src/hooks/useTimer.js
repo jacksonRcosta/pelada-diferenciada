@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 
-export function useTimer(defaultMin = 45) {
+export function useTimer(defaultMin = 25) {
   const [secs, setSecs] = useState(0)
   const [running, setRunning] = useState(false)
   const [target, setTarget] = useState(defaultMin * 60)

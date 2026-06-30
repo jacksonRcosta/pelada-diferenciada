@@ -7,7 +7,7 @@ import { showToast } from '../components/Toast'
 
 export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
   const { players, teams, schedule, activeMatch, matchA, matchB, scoreA, scoreB, matchFinished, matchHistory } = state
-  const timer = useTimer(45)
+  const timer = useTimer(25)
   const [subPid, setSubPid] = useState(null)
   const [subTidx, setSubTidx] = useState(-1)
 
@@ -122,13 +122,20 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
         </div>
       )}
 
+      {/* FINALIZAR (logo abaixo do placar) */}
+      {!viewOnly && tmA && tmB && !matchFinished && (
+        <button onClick={finishMatch} style={{ width:'100%', padding:14, borderRadius:11, background:'var(--red)', color:'#fff', fontSize:15, fontWeight:700, marginBottom:12 }}>
+          🏁 Finalizar Partida
+        </button>
+      )}
+
       {/* CRONÔMETRO */}
       {tmA && tmB && !matchFinished && (
         <div style={cardStyle()}>
           <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 13px', background:'#f0ede8', borderBottom:'1px solid var(--brd)', flexWrap:'wrap' }}>
             <label style={{ fontSize:11, fontWeight:700, color:'var(--t3)' }}>Duração (min):</label>
-            <input type="number" defaultValue={45} min={1} max={120}
-              onChange={e => timer.setMin(+e.target.value || 45)}
+            <input type="number" defaultValue={25} min={1} max={120}
+              onChange={e => timer.setMin(+e.target.value || 25)}
               style={{ width:62, padding:'7px 10px', fontSize:15, border:'1.5px solid #ddd', borderRadius:8, background:'var(--sur)', color:'var(--txt)', textAlign:'center', marginLeft:6 }} />
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 13px', background:'#f9f8f5' }}>
@@ -191,13 +198,6 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
         </div>
       )}
 
-      {/* FINALIZAR */}
-      {!viewOnly && tmA && tmB && !matchFinished && (
-        <button onClick={finishMatch} style={{ width:'100%', padding:14, borderRadius:11, background:'var(--red)', color:'#fff', fontSize:15, fontWeight:700, marginBottom:12 }}>
-          🏁 Finalizar Partida
-        </button>
-      )}
-
       {/* AGENDA */}
       <div style={{ fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'var(--t3)', margin:'14px 0 7px' }}>Agenda de Jogos</div>
       {schedule.length > 0 ? (
@@ -258,8 +258,10 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
 
       {/* MODAL SUBSTITUIÇÃO */}
       <Modal open={!!subPid} onClose={() => { setSubPid(null); setSubTidx(-1) }}>
-        <div style={{ padding:'14px 16px 10px', fontSize:15, fontWeight:800, borderBottom:'1px solid var(--brd)' }}>
+        <div style={{ padding:'14px 44px 10px 16px', fontSize:15, fontWeight:800, borderBottom:'1px solid var(--brd)', position:'relative' }}>
           Substituir: {players.find(p => p.id === subPid)?.name}
+          <button onClick={() => { setSubPid(null); setSubTidx(-1) }}
+            style={{ position:'absolute', top:10, right:12, width:30, height:30, borderRadius:'50%', background:'#f0ede8', color:'#888', fontSize:16, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
         </div>
         {cands.length === 0
           ? <div style={{ padding:16, textAlign:'center', color:'var(--t3)', fontSize:13 }}>Nenhum disponível</div>

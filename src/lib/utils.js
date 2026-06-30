@@ -48,6 +48,33 @@ export function hasCounts(m) {
   return !!m && Object.values(m).some(v => v > 0)
 }
 
+// Lê um arquivo de imagem e devolve um dataURL JPEG redimensionado (quadrado,
+// lado máx. `size`px). Mantém o blob salvo no Supabase pequeno o suficiente para
+// caber no estado único. Rejeita em caso de erro de leitura/decodificação.
+export function imageFileToDataURL(file, size = 128) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Falha ao ler o arquivo'))
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = () => reject(new Error('Imagem inválida'))
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext('2d')
+        const min = Math.min(img.width, img.height)
+        const sx = (img.width - min) / 2
+        const sy = (img.height - min) / 2
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size)
+        resolve(canvas.toDataURL('image/jpeg', 0.8))
+      }
+      img.src = reader.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 // Verifica se a data fim da temporada (formato 'YYYY-MM-DD') já passou.
 export function seasonEnded(dateEnd) {
   if (!dateEnd) return false

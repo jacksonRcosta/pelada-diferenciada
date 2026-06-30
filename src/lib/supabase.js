@@ -73,7 +73,8 @@ export async function saveState(obj) {
   }
 }
 
-// Polling a cada 8 segundos
+// Polling a cada 4 segundos — permite que várias pessoas marquem a pelada
+// "em tempo real": cada cliente escreve no mesmo registro e relê as mudanças.
 let lastPolled = ''
 export function subscribeToChanges(cb) {
   const iv = setInterval(async () => {
@@ -89,6 +90,6 @@ export function subscribeToChanges(cb) {
     } catch(e) {
       console.warn('Polling error:', e.message)
     }
-  }, 8000)
+  }, 4000)
   return () => clearInterval(iv)
 }

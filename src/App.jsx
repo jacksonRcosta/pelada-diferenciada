@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useGameState } from './hooks/useGameState'
 import SyncBar from './components/SyncBar'
+import Modal from './components/Modal'
+import { showToast } from './components/Toast'
 import Toast from './components/Toast'
 import ScoutModal from './components/ScoutModal'
 import PartidaPage from './pages/PartidaPage'
@@ -25,6 +27,7 @@ export default function App() {
   const { state, update, syncStatus } = useGameState(VIEW_ONLY)
   const [tab, setTab] = useState('partida')
   const [scoutPid, setScoutPid] = useState(null)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const syncLabel = {
     syncing: '⟳ sincronizando...',
@@ -33,12 +36,18 @@ export default function App() {
     idle: '● ao vivo'
   }
 
-  function share() {
-    const url = window.location.origin + window.location.pathname + '?view=1'
+  // mode: 'edit' (todos podem marcar em tempo real) ou 'view' (somente leitura)
+  function doShare(mode) {
+    const base = window.location.origin + window.location.pathname
+    const url = mode === 'view' ? base + '?view=1' : base
+    const title = mode === 'view'
+      ? 'Pelada Diferenciada — Visualização'
+      : 'Pelada Diferenciada — Marcar pelada'
+    setShareOpen(false)
     if (navigator.share) {
-      navigator.share({ title: 'Pelada Diferenciada', url }).catch(() => {})
+      navigator.share({ title, url }).catch(() => {})
     } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).then(() => alert('Link copiado! Cole no WhatsApp 📲'))
+      navigator.clipboard.writeText(url).then(() => showToast('🔗 Link copiado! Cole no WhatsApp'))
     } else {
       prompt('Copie o link:', url)
     }
@@ -91,7 +100,7 @@ export default function App() {
             {syncLabel[syncStatus] || ''}
           </div>
           {!VIEW_ONLY && (
-            <button onClick={share} style={{ background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.3)', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
+            <button onClick={() => setShareOpen(true)} style={{ background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.3)', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
               🔗 Compartilhar
             </button>
           )}
@@ -134,6 +143,26 @@ export default function App() {
         onCardChange={handleCardChange}
         viewOnly={VIEW_ONLY}
       />
+
+      <Modal open={shareOpen} onClose={() => setShareOpen(false)}>
+        <div style={{ padding: '14px 44px 10px 16px', fontSize: 16, fontWeight: 800, borderBottom: '1px solid var(--brd)', position: 'relative' }}>
+          Compartilhar pelada
+          <button onClick={() => setShareOpen(false)}
+            style={{ position: 'absolute', top: 10, right: 12, width: 30, height: 30, borderRadius: '50%', background: '#f0ede8', color: '#888', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+        </div>
+        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button onClick={() => doShare('edit')}
+            style={{ textAlign: 'left', padding: '13px 14px', borderRadius: 12, background: 'var(--navy)', color: '#fff', border: 'none' }}>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>✏ Marcar a pelada</div>
+            <div style={{ fontSize: 11, opacity: .8, marginTop: 2 }}>Quem abrir pode marcar scouts em tempo real junto com você.</div>
+          </button>
+          <button onClick={() => doShare('view')}
+            style={{ textAlign: 'left', padding: '13px 14px', borderRadius: 12, background: '#f0ede8', color: 'var(--txt)', border: '1px solid var(--brd)' }}>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>👁 Somente visualização</div>
+            <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>Acompanha o placar e os scouts ao vivo, sem poder alterar.</div>
+          </button>
+        </div>
+      </Modal>
 
       <Toast />
     </div>
