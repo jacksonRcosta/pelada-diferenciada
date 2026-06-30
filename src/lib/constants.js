@@ -31,5 +31,5 @@ export const INITIAL_STATE = {
   players: [], nextId: 1, teams: null, schedule: [],
   activeMatch: -1, matchA: -1, matchB: -1,
   scoreA: 0, scoreB: 0, matchFinished: false, matchHistory: [],
-  seasonHistory: [],
+  roundHistory: [], seasonHistory: [],
 }

@@ -1,9 +1,9 @@
 import { SCOUTS, CARDS, TEAM_CFG } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, avatarColor, initials, hasCounts, seasonEnded } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, avatarColor, initials, hasCounts, seasonEnded, bestByPosition, scoutSummary, shareText } from '../lib/utils'
 import { showToast } from '../components/Toast'
 
 export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
-  const { players, teams, matchHistory, seasonHistory } = state
+  const { players, teams, matchHistory, roundHistory, seasonHistory } = state
 
   function teamOf(pid) {
     if (!teams) return -1
@@ -34,6 +34,11 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
         }))
         .sort((a, b) => b.pts - a.pts),
       matchHistory: matchHistory || [],
+      // Melhores por posição da temporada e destaques de cada rodada disputada.
+      bestByPosition: bestByPosition(players).map(({ pos, player }) => ({
+        pos, name: player.name, pts: player.pts, sc: player.sc,
+      })),
+      roundHistory: roundHistory || [],
     }
 
     const newPlayers = players.map(p => ({ ...p, sc: {}, cards: {}, scTotal: {}, cardsTotal: {} }))
@@ -41,6 +46,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
       players: newPlayers,
       scoreA: 0, scoreB: 0, matchFinished: false,
       matchHistory: [],
+      roundHistory: [],
       seasonHistory: [snapshot, ...(seasonHistory || [])],
     })
     showToast('🏆 Temporada arquivada no histórico e scouts zerados!')
@@ -75,6 +81,26 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
 
   const medals = ['g', 's', 'b']
   const medalColors = { g: '#BA7517', s: '#888', b: '#993C1D' }
+
+  // Melhores por posição da temporada atual (ao vivo, com base nos acumulados).
+  const posBest = bestByPosition(players)
+  const rounds = roundHistory || []
+
+  function shareByPosition() {
+    if (!posBest.length) { showToast('Sem scouts suficientes ainda.'); return }
+    const lines = ['🏆 *Pelada Diferenciada — Melhores por posição*', '']
+    posBest.forEach(({ pos, player }) => {
+      lines.push(`${pos}: ${player.name} — ${ptsLabel(player.pts)} pts${scoutSummary(player.sc) ? ` (${scoutSummary(player.sc)})` : ''}`)
+    })
+    shareText('Melhores por posição', lines.join('\n'), () => showToast('🔗 Resumo copiado!'))
+  }
+
+  function shareRound(r) {
+    const lines = ['🌟 *Pelada Diferenciada — Destaque da rodada*', '']
+    if (r.mvp) lines.push(`Destaque: ${r.mvp.name} · ${r.mvp.pos} — ${ptsLabel(r.mvp.pts)} pts${scoutSummary(r.mvp.sc) ? ` (${scoutSummary(r.mvp.sc)})` : ''}`, '')
+    ;(r.top || []).slice(0, 5).forEach((p, i) => lines.push(`${i + 1}. ${p.name} (${p.pos}) — ${ptsLabel(p.pts)}`))
+    shareText('Destaque da rodada', lines.join('\n'), () => showToast('🔗 Resumo copiado!'))
+  }
 
   return (
     <div>
@@ -152,6 +178,71 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
         })}
       </div>
 
+      {posBest.length > 0 && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 0 7px' }}>
+            <div style={{ flex: 1, fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)' }}>Melhores por posição (temporada)</div>
+            <button onClick={shareByPosition} style={{ background: '#FAEEDA', border: '1px solid #e0c79a', color: '#633806', borderRadius: 8, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>🔗 Compartilhar</button>
+          </div>
+          <div style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', marginBottom: 10, overflow: 'hidden' }}>
+            {posBest.map(({ pos, player }, i) => (
+              <div key={pos} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderBottom: i < posBest.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
+                <span style={{ fontSize: 18 }}>🏅</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: .5, textTransform: 'uppercase', color: 'var(--t3)' }}>{pos}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700 }}>{player.name}</div>
+                  {scoutSummary(player.sc) && <div style={{ fontSize: 11, color: 'var(--t3)' }}>{scoutSummary(player.sc)}</div>}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, padding: '4px 11px', borderRadius: 14, ...ptStyle(player.pts) }}>{ptsLabel(player.pts)}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {rounds.length > 0 && (
+        <>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', margin: '16px 0 7px' }}>
+            Destaques das rodadas ({rounds.length})
+          </div>
+          {rounds.map((r, ri) => (
+            <details key={ri} style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', marginBottom: 10, overflow: 'hidden' }}>
+              <summary style={{ listStyle: 'none', cursor: 'pointer', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 20 }}>🌟</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>{r.mvp ? r.mvp.name : 'Rodada'}{r.mvp ? ` · ${r.mvp.pos}` : ''}</div>
+                  <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>{fmtDate(r.endedAt)} · {r.games || (r.matches || []).length} jogo(s){r.mvp ? ` · ${ptsLabel(r.mvp.pts)} pts` : ''}</div>
+                </div>
+                <span style={{ fontSize: 11, color: 'var(--t3)' }}>ver ▾</span>
+              </summary>
+              <div style={{ borderTop: '1px solid var(--brd)', padding: '10px 14px' }}>
+                {(r.top || []).length > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: .8, textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 6 }}>Top da rodada</div>
+                    {r.top.map((p, pi) => (
+                      <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
+                        <span style={{ width: 18, fontWeight: 800, color: medalColors[medals[pi]] || '#ccc' }}>{pi + 1}</span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ fontWeight: 700 }}>{p.name}</span>
+                          <span style={{ color: 'var(--t3)', fontSize: 11 }}> · {p.pos}</span>
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, ...ptStyle(p.pts) }}>{ptsLabel(p.pts)}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+                {(r.matches || []).length > 0 && (
+                  <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 10 }}>
+                    {r.matches.map((m, mi) => <div key={mi}>⚽ {m.nmA} {m.sA} × {m.sB} {m.nmB}</div>)}
+                  </div>
+                )}
+                <button onClick={() => shareRound(r)} style={{ width: '100%', marginTop: 10, padding: 10, borderRadius: 9, background: '#e8eef8', border: '1px solid #c7d4ec', color: 'var(--navy)', fontSize: 12, fontWeight: 700 }}>🔗 Compartilhar destaque</button>
+              </div>
+            </details>
+          ))}
+        </>
+      )}
+
       {(seasonHistory || []).length > 0 && (
         <>
           <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', margin: '16px 0 7px' }}>
@@ -194,8 +285,26 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
                       ))}
                     </>
                   )}
+                  {(s.bestByPosition || []).length > 0 && (
+                    <>
+                      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: .8, textTransform: 'uppercase', color: 'var(--t3)', margin: '10px 0 6px' }}>Melhores por posição</div>
+                      {s.bestByPosition.map((b, bi) => (
+                        <div key={bi} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
+                          <span style={{ fontSize: 14 }}>🏅</span>
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ color: 'var(--t3)', fontSize: 11, textTransform: 'uppercase', fontWeight: 800 }}>{b.pos}: </span>
+                            <span style={{ fontWeight: 700 }}>{b.name}</span>
+                          </span>
+                          <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, ...ptStyle(b.pts) }}>{ptsLabel(b.pts)}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {(s.roundHistory || []).length > 0 && (
+                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 10 }}>🌟 {s.roundHistory.length} rodada(s) com destaque registrado.</div>
+                  )}
                   {(s.matchHistory || []).length > 0 && (
-                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 10 }}>⚽ {s.matchHistory.length} jogo(s) disputado(s) na temporada.</div>
+                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 4 }}>⚽ {s.matchHistory.length} jogo(s) disputado(s) na temporada.</div>
                   )}
                 </div>
               </details>

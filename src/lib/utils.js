@@ -64,6 +64,74 @@ export function hasCounts(m) {
   return !!m && Object.values(m).some(v => v > 0)
 }
 
+// Comparador de "melhor jogador" pelo critério acordado:
+// 1) maior pontuação de scout; 2) mais gols (gol + gol de placa);
+// 3) mais assistências; 4) menos falhas. Recebe dois mapas de scout.
+export function compareScout(a = {}, b = {}) {
+  const pb = calcPoints(b), pa = calcPoints(a)
+  if (pb !== pa) return pb - pa
+  const gb = (b.gol || 0) + (b.golplaca || 0), ga = (a.gol || 0) + (a.golplaca || 0)
+  if (gb !== ga) return gb - ga
+  const asb = b.assistencia || 0, asa = a.assistencia || 0
+  if (asb !== asa) return asb - asa
+  return (a.falha || 0) - (b.falha || 0) // menos falhas primeiro
+}
+
+// Ordena uma lista de jogadores [{ sc, ... }] do melhor para o pior pelo
+// critério de MVP. Não muta o array. Considera apenas quem possui marcações.
+export function rankByScout(entries) {
+  return (entries || [])
+    .filter(e => hasCounts(e.sc))
+    .slice()
+    .sort((x, y) => compareScout(x.sc, y.sc))
+}
+
+// Retorna o melhor jogador de uma lista (ou null se ninguém pontuou).
+export function bestPlayer(entries) {
+  return rankByScout(entries)[0] || null
+}
+
+// Calcula o melhor jogador de cada posição a partir de uma lista de jogadores
+// com scouts acumulados. `getSc` extrai o mapa de scout de cada jogador.
+// Retorna um array ordenado pela ordem tática: [{ pos, player }].
+export function bestByPosition(players, getSc = p => p.scTotal) {
+  const groups = {}
+  for (const p of players || []) {
+    const sc = getSc(p) || {}
+    if (!hasCounts(sc)) continue
+    const pos = p.pos || '—'
+    if (!groups[pos]) groups[pos] = []
+    groups[pos].push({ name: p.name, pos, sc, pts: calcPoints(sc) })
+  }
+  return Object.keys(groups)
+    .sort((a, b) => posRank(a) - posRank(b))
+    .map(pos => ({ pos, player: groups[pos].sort((x, y) => compareScout(x.sc, y.sc))[0] }))
+}
+
+// Monta um resumo curto de scouts de um jogador para mensagens (ex.: "2 gols, 1 assist.").
+export function scoutSummary(sc = {}) {
+  const parts = []
+  const g = (sc.gol || 0) + (sc.golplaca || 0)
+  if (g) parts.push(`${g} gol${g > 1 ? 's' : ''}`)
+  if (sc.assistencia) parts.push(`${sc.assistencia} assist.`)
+  if (sc.defesa) parts.push(`${sc.defesa} defesa${sc.defesa > 1 ? 's' : ''}`)
+  if (sc.desarme) parts.push(`${sc.desarme} desarme${sc.desarme > 1 ? 's' : ''}`)
+  return parts.join(', ')
+}
+
+// Compartilha um texto via Web Share API (mobile) ou copia para a área de
+// transferência. `onCopied` é chamado quando o texto foi copiado (para toast).
+export function shareText(title, text, onCopied) {
+  if (navigator.share) {
+    navigator.share({ title, text }).catch(() => {})
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => onCopied && onCopied())
+  } else {
+    // eslint-disable-next-line no-alert
+    window.prompt('Copie o texto:', text)
+  }
+}
+
 // Lê um arquivo de imagem e devolve um dataURL JPEG redimensionado (quadrado,
 // lado máx. `size`px). Mantém o blob salvo no Supabase pequeno o suficiente para
 // caber no estado único. Rejeita em caso de erro de leitura/decodificação.

@@ -46,6 +46,7 @@ export async function saveState(obj) {
     scoreB:       obj.scoreB || 0,
     matchFinished: obj.matchFinished || false,
     matchHistory: obj.matchHistory || [],
+    roundHistory: Array.isArray(obj.roundHistory) ? obj.roundHistory : [],
     seasonHistory: Array.isArray(obj.seasonHistory) ? obj.seasonHistory : [],
   }
 

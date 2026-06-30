@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { TEAM_CFG, CARDS } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, formatTime, initials, avatarColor, mergeScouts, hasCounts, sortByPosition, buildSchedule } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, formatTime, initials, avatarColor, mergeScouts, hasCounts, sortByPosition, buildSchedule, bestPlayer, rankByScout, scoutSummary, shareText } from '../lib/utils'
 import { useTimer } from '../hooks/useTimer'
 import Modal from '../components/Modal'
 import { showToast } from '../components/Toast'
 
 export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
-  const { players, teams, schedule, activeMatch, matchA, matchB, scoreA, scoreB, matchFinished, matchHistory } = state
+  const { players, teams, schedule, activeMatch, matchA, matchB, scoreA, scoreB, matchFinished, matchHistory, roundHistory } = state
   const timer = useTimer(25)
   const [subPid, setSubPid] = useState(null)
   const [subTidx, setSubTidx] = useState(-1)
@@ -50,7 +50,18 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
     if (!window.confirm(`Finalizar?\n${tmA?.name} ${scoreA} × ${scoreB} ${tmB?.name}`)) return
     timer.pause()
     const ns = schedule.map((g, i) => i === activeMatch ? { ...g, done: true, scoreA, scoreB } : g)
-    const nh = [...(matchHistory || []), { nmA: tmA?.name, nmB: tmB?.name, sA: scoreA, sB: scoreB }]
+    // Snapshot dos scouts por jogador desta partida (antes de zerar `sc`/`cards`).
+    // É o que permite calcular o "melhor da partida" e o destaque da rodada.
+    const matchScouts = players
+      .filter(p => hasCounts(p.sc) || hasCounts(p.cards))
+      .map(p => ({ id: p.id, name: p.name, pos: p.pos, sc: { ...p.sc }, cards: { ...p.cards }, pts: calcPoints(p.sc) }))
+    const mvp = bestPlayer(matchScouts)
+    const entry = {
+      nmA: tmA?.name, nmB: tmB?.name, sA: scoreA, sB: scoreB,
+      scouts: matchScouts,
+      mvp: mvp ? { name: mvp.name, pos: mvp.pos, sc: mvp.sc, pts: mvp.pts } : null,
+    }
+    const nh = [...(matchHistory || []), entry]
     // Contabiliza os scouts/cartões da partida no total da temporada e zera a
     // partida atual para o próximo jogo.
     const np = players.map(p => {
@@ -64,7 +75,9 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
       }
     })
     update({ matchFinished: true, schedule: ns, matchHistory: nh, players: np })
-    showToast('🏁 Partida encerrada! Scouts contabilizados na temporada.')
+    showToast(mvp
+      ? `🏁 Encerrada! ⭐ Melhor da partida: ${mvp.name} (${ptsLabel(mvp.pts)})`
+      : '🏁 Partida encerrada! Scouts contabilizados na temporada.')
   }
 
   function finishRound() {
@@ -84,6 +97,29 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
     const keptIds = new Set(kept.map(p => p.id))
     const nt = (teams || []).map(t => ({ ...t, pids: t.pids.filter(id => keptIds.has(id)) }))
     const sched = buildSchedule(nt.length)
+
+    // Agrega os scouts de todas as partidas finalizadas na rodada para apurar o
+    // destaque (melhor jogador do dia) e guardar no histórico de rodadas.
+    const agg = {}
+    for (const m of matchHistory || []) {
+      for (const s of m.scouts || []) {
+        if (!agg[s.id]) agg[s.id] = { id: s.id, name: s.name, pos: s.pos, sc: {} }
+        agg[s.id].sc = mergeScouts(agg[s.id].sc, s.sc)
+      }
+    }
+    const aggList = Object.values(agg).map(e => ({ ...e, pts: calcPoints(e.sc) }))
+    const ranked = rankByScout(aggList)
+    const roundEntry = {
+      endedAt: new Date().toISOString(),
+      games: (matchHistory || []).length,
+      mvp: ranked[0] ? { name: ranked[0].name, pos: ranked[0].pos, sc: ranked[0].sc, pts: ranked[0].pts } : null,
+      top: ranked.slice(0, 5).map(e => ({ name: e.name, pos: e.pos, sc: e.sc, pts: e.pts })),
+      matches: (matchHistory || []).map(m => ({ nmA: m.nmA, nmB: m.nmB, sA: m.sA, sB: m.sB })),
+    }
+    const newRoundHistory = roundEntry.mvp
+      ? [roundEntry, ...(roundHistory || [])]
+      : (roundHistory || [])
+
     update({
       players: kept,
       teams: nt,
@@ -94,9 +130,12 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
       scoreA: 0, scoreB: 0,
       matchFinished: false,
       matchHistory: [],
+      roundHistory: newRoundHistory,
     })
     timer.reset()
-    showToast('🔚 Rodada finalizada! Agenda zerada e convidados removidos.')
+    showToast(roundEntry.mvp
+      ? `🔚 Rodada finalizada! 🌟 Destaque: ${roundEntry.mvp.name} (${ptsLabel(roundEntry.mvp.pts)})`
+      : '🔚 Rodada finalizada! Agenda zerada e convidados removidos.')
   }
 
   function doSub(newPid) {
@@ -107,6 +146,28 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
     setSubPid(null)
     setSubTidx(-1)
     showToast(`${op?.name} ⇄ ${np?.name}`)
+  }
+
+  function shareRound() {
+    const mh = matchHistory || []
+    if (!mh.length) { showToast('Nenhuma partida finalizada nesta rodada ainda.'); return }
+    // Apura o destaque do dia agregando os scouts das partidas já finalizadas.
+    const agg = {}
+    for (const m of mh) for (const s of m.scouts || []) {
+      if (!agg[s.id]) agg[s.id] = { name: s.name, pos: s.pos, sc: {} }
+      agg[s.id].sc = mergeScouts(agg[s.id].sc, s.sc)
+    }
+    const ranked = rankByScout(Object.values(agg))
+    const lines = ['⚽ *Pelada Diferenciada — Resultados da rodada*', '']
+    mh.forEach((m, i) => {
+      lines.push(`Jogo ${i + 1}: ${m.nmA} ${m.sA} × ${m.sB} ${m.nmB}`)
+      if (m.mvp) lines.push(`   ⭐ Melhor: ${m.mvp.name} (${ptsLabel(m.mvp.pts)})`)
+    })
+    if (ranked[0]) {
+      const d = ranked[0]
+      lines.push('', `🌟 *Destaque da rodada:* ${d.name} · ${d.pos} — ${ptsLabel(calcPoints(d.sc))} pts${scoutSummary(d.sc) ? ` (${scoutSummary(d.sc)})` : ''}`)
+    }
+    shareText('Pelada Diferenciada — Rodada', lines.join('\n'), () => showToast('🔗 Resumo da rodada copiado!'))
   }
 
   const cands = subTidx >= 0 && teams[subTidx]
@@ -275,13 +336,27 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
       {/* HISTÓRICO */}
       {(matchHistory || []).length > 0 && (
         <>
-          <div style={{ fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'var(--t3)', margin:'14px 0 7px' }}>Histórico</div>
+          <div style={{ display:'flex', alignItems:'center', gap:8, margin:'14px 0 7px' }}>
+            <div style={{ flex:1, fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'var(--t3)' }}>Histórico da rodada</div>
+            {!viewOnly && (
+              <button onClick={shareRound} style={{ background:'#e8eef8', border:'1px solid #c7d4ec', color:'var(--navy)', borderRadius:8, fontSize:11, fontWeight:700, padding:'5px 9px' }}>
+                🔗 Compartilhar rodada
+              </button>
+            )}
+          </div>
           <div style={cardStyle()}>
             {matchHistory.map((m, i) => (
-              <div key={i} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 13px', borderBottom: i < matchHistory.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
-                <div style={{ fontSize:12, fontWeight:700, color:'var(--t2)' }}>Jogo {i + 1}</div>
-                <div style={{ flex:1, fontSize:13 }}><b>{m.nmA}</b> <span style={{ color:'var(--t3)' }}>vs</span> <b>{m.nmB}</b></div>
-                <div style={{ fontSize:18, fontWeight:800, color:'var(--navy)', minWidth:60, textAlign:'center' }}>{m.sA} × {m.sB}</div>
+              <div key={i} style={{ padding:'10px 13px', borderBottom: i < matchHistory.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:'var(--t2)' }}>Jogo {i + 1}</div>
+                  <div style={{ flex:1, fontSize:13 }}><b>{m.nmA}</b> <span style={{ color:'var(--t3)' }}>vs</span> <b>{m.nmB}</b></div>
+                  <div style={{ fontSize:18, fontWeight:800, color:'var(--navy)', minWidth:60, textAlign:'center' }}>{m.sA} × {m.sB}</div>
+                </div>
+                {m.mvp && (
+                  <div style={{ marginTop:6, fontSize:11.5, color:'#633806', background:'#FAEEDA', borderRadius:8, padding:'5px 9px' }}>
+                    ⭐ <b>Melhor da partida:</b> {m.mvp.name} <span style={{ color:'var(--t3)' }}>· {m.mvp.pos}</span> ({ptsLabel(m.mvp.pts)}{scoutSummary(m.mvp.sc) ? ` · ${scoutSummary(m.mvp.sc)}` : ''})
+                  </div>
+                )}
               </div>
             ))}
           </div>
