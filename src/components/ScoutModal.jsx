@@ -60,13 +60,21 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
       <div style={{ padding:'6px 14px' }}>
         {SCOUTS.map(s => {
           const cnt = p.sc[s.id] || 0
+          const tot = (p.scTotal || {})[s.id] || 0   // acumulado da temporada (partidas já finalizadas)
           return (
             <div key={s.id} style={{ display:'flex', alignItems:'center', gap:9, padding:'11px 0', borderBottom:'1px solid rgba(0,0,0,.06)' }}>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:15, fontWeight:700 }}>{s.name}</div>
-                <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:8, background:s.c.bg, color:s.c.dk, display:'inline-block', marginTop:3 }}>
-                  {s.pts > 0 ? '+' : ''}{s.pts} pts
-                </span>
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3, flexWrap:'wrap' }}>
+                  <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:8, background:s.c.bg, color:s.c.dk, display:'inline-block' }}>
+                    {s.pts > 0 ? '+' : ''}{s.pts} pts
+                  </span>
+                  {tot > 0 && (
+                    <span style={{ fontSize:10.5, fontWeight:700, color:'var(--t3)' }}>
+                      temporada: {tot}
+                    </span>
+                  )}
+                </div>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                 {cnt > 0 && <button onClick={() => chgScout(s.id, -cnt)} style={{ width:40, height:40, borderRadius:10, background:'#fce8e8', color:'var(--red)', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>}
