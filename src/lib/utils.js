@@ -101,7 +101,7 @@ export function bestByPosition(players, getSc = p => p.scTotal) {
     if (!hasCounts(sc)) continue
     const pos = p.pos || '—'
     if (!groups[pos]) groups[pos] = []
-    groups[pos].push({ name: p.name, pos, sc, pts: calcPoints(sc) })
+    groups[pos].push({ id: p.id, name: p.name, pos, sc, pts: calcPoints(sc), photo: p.photo || null })
   }
   return Object.keys(groups)
     .sort((a, b) => posRank(a) - posRank(b))

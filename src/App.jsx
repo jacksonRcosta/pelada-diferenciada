@@ -10,6 +10,7 @@ import ScoutsPage from './pages/ScoutsPage'
 import TimesPage from './pages/TimesPage'
 import JogadoresPage from './pages/JogadoresPage'
 import RankingPage from './pages/RankingPage'
+import DestaquesPage from './pages/DestaquesPage'
 import LOGO from './lib/logo'
 
 const TABS = [
@@ -18,6 +19,7 @@ const TABS = [
   { id: 'times',     label: 'Times'      },
   { id: 'jogadores', label: 'Peladeiros' },
   { id: 'ranking',   label: 'Ranking'    },
+  { id: 'destaques', label: 'Destaques'  },
 ]
 
 const urlParams = new URLSearchParams(window.location.search)
@@ -131,6 +133,7 @@ export default function App() {
         {tab === 'times'     && <TimesPage     state={state} update={update} viewOnly={VIEW_ONLY} />}
         {tab === 'jogadores' && <JogadoresPage state={state} update={update} viewOnly={VIEW_ONLY} />}
         {tab === 'ranking'   && <RankingPage   state={state} update={update} viewOnly={VIEW_ONLY} onOpenScout={openScoutFromRanking} />}
+        {tab === 'destaques' && <DestaquesPage state={state} />}
       </div>
 
       <ScoutModal
