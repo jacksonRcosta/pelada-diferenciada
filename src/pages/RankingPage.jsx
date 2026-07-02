@@ -1,5 +1,7 @@
 import { SCOUTS, CARDS, TEAM_CFG } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, avatarColor, initials, hasCounts, seasonEnded, bestByPosition, scoutSummary, shareText, seasonAwards } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, hasCounts, seasonEnded, bestByPosition, scoutSummary, seasonAwards } from '../lib/utils'
+import { shareCard } from '../lib/shareCard'
+import Avatar from '../components/Avatar'
 import { showToast } from '../components/Toast'
 
 export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
@@ -101,28 +103,51 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
 
   function shareAwards() {
     if (!awardCards.length) { showToast('Sem scouts suficientes ainda.'); return }
-    const lines = ['🏆 *Pelada Diferenciada — Prêmios da temporada*', '']
-    awardCards.forEach(c => {
-      const p = awards[c.key]
-      lines.push(`${c.emoji} ${c.title}: ${p.name} (${p.pos}) — ${c.metric(p)}`)
-    })
-    shareText('Prêmios da temporada', lines.join('\n'), () => showToast('🔗 Prêmios copiados!'))
+    shareCard({
+      eyebrow: 'Prêmios da Temporada',
+      title: 'Os Craques da Pelada',
+      rows: awardCards.map(c => {
+        const p = awards[c.key]
+        return { emoji: c.emoji, name: p.name, meta: `${c.title} · ${p.pos}`, value: c.metric(p) }
+      }),
+    }, msg => showToast(msg))
   }
 
   function shareByPosition() {
     if (!posBest.length) { showToast('Sem scouts suficientes ainda.'); return }
-    const lines = ['🏆 *Pelada Diferenciada — Melhores por posição*', '']
-    posBest.forEach(({ pos, player }) => {
-      lines.push(`${pos}: ${player.name} — ${ptsLabel(player.pts)} pts${scoutSummary(player.sc) ? ` (${scoutSummary(player.sc)})` : ''}`)
-    })
-    shareText('Melhores por posição', lines.join('\n'), () => showToast('🔗 Resumo copiado!'))
+    shareCard({
+      eyebrow: 'Melhores por Posição',
+      title: 'Seleção da Temporada',
+      rows: posBest.map(({ pos, player }) => ({
+        emoji: '🏅',
+        name: player.name,
+        meta: scoutSummary(player.sc) ? `${pos} · ${scoutSummary(player.sc)}` : pos,
+        value: `${ptsLabel(player.pts)} pts`,
+      })),
+    }, msg => showToast(msg))
   }
 
   function shareRound(r) {
-    const lines = ['🌟 *Pelada Diferenciada — Destaque da rodada*', '']
-    if (r.mvp) lines.push(`Destaque: ${r.mvp.name} · ${r.mvp.pos} — ${ptsLabel(r.mvp.pts)} pts${scoutSummary(r.mvp.sc) ? ` (${scoutSummary(r.mvp.sc)})` : ''}`, '')
-    ;(r.top || []).slice(0, 5).forEach((p, i) => lines.push(`${i + 1}. ${p.name} (${p.pos}) — ${ptsLabel(p.pts)}`))
-    shareText('Destaque da rodada', lines.join('\n'), () => showToast('🔗 Resumo copiado!'))
+    const rows = []
+    if (r.mvp) rows.push({
+      emoji: '⭐',
+      name: r.mvp.name,
+      meta: scoutSummary(r.mvp.sc) ? `${r.mvp.pos} · ${scoutSummary(r.mvp.sc)}` : r.mvp.pos,
+      value: `${ptsLabel(r.mvp.pts)} pts`,
+    })
+    ;(r.top || []).slice(0, 5).forEach((p, i) => rows.push({
+      rank: i + 1,
+      medalColor: medalColors[medals[i]],
+      name: p.name,
+      meta: p.pos,
+      value: ptsLabel(p.pts),
+    }))
+    shareCard({
+      eyebrow: 'Destaque da Rodada',
+      title: r.mvp ? `⭐ ${r.mvp.name}` : 'Destaque da Rodada',
+      subtitle: `Rodada de ${fmtDate(r.endedAt)}`,
+      rows,
+    }, msg => showToast(msg))
   }
 
   return (
@@ -170,7 +195,6 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
           const sc = p.scTotal || {}
           const cards = p.cardsTotal || {}
           const pt = calcPoints(sc)
-          const [bg, fg] = avatarColor(oi)
           const ti = teamOf(p.id)
           const tc = ti >= 0 ? TEAM_CFG[ti % TEAM_CFG.length] : null
           const pills = [
@@ -186,7 +210,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
           return (
             <div key={p.id} onClick={() => onOpenScout(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderBottom: i < sorted.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none', cursor: 'pointer' }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: medalColors[medals[i]] || '#ccc', width: 22, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
-              <div style={{ width: 34, height: 34, borderRadius: '50%', background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{initials(p.name)}</div>
+              <Avatar name={p.name} index={oi} size={34} fontSize={11} photo={p.photo} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                   {p.name}

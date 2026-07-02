@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { TEAM_CFG, TEAM_NAMES } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, shuffle, buildSchedule, avatarColor, initials, imageFileToDataURL, sortByPosition } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, shuffle, buildSchedule, initials, imageFileToDataURL, sortByPosition } from '../lib/utils'
+import Avatar from '../components/Avatar'
 import { showToast } from '../components/Toast'
 
 export default function TimesPage({ state, update, viewOnly }) {
@@ -140,11 +141,10 @@ export default function TimesPage({ state, update, viewOnly }) {
                 </div>
                 {pls.length === 0 && <div style={{ padding: '11px 13px', color: 'var(--t3)', fontSize: 13 }}>Nenhum jogador</div>}
                 {pls.map(p => {
-                  const [bg, fg] = avatarColor(players.indexOf(p))
                   const pt = calcPoints(p.scTotal)
                   return (
                     <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid rgba(0,0,0,.06)', background: 'var(--sur)' }}>
-                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>{initials(p.name)}</div>
+                      <Avatar name={p.name} index={players.indexOf(p)} size={34} fontSize={11} photo={p.photo} />
                       <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.guest ? '🎟 ' : ''}{p.pos}</div></div>
                       <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, marginRight: 7, flexShrink: 0, ...ptStyle(pt) }}>{ptsLabel(pt)}</span>
                       {!viewOnly && (
@@ -167,11 +167,10 @@ export default function TimesPage({ state, update, viewOnly }) {
               <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', margin: '14px 0 7px' }}>Sem time ({unassigned.length})</div>
               <div style={{ borderRadius: 14, border: '2px dashed #cfcabf', marginBottom: 12, overflow: 'hidden', background: 'var(--sur)' }}>
                 {unassigned.map(p => {
-                  const [bg, fg] = avatarColor(players.indexOf(p))
                   const pt = calcPoints(p.scTotal)
                   return (
                     <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid rgba(0,0,0,.06)' }}>
-                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>{initials(p.name)}</div>
+                      <Avatar name={p.name} index={players.indexOf(p)} size={34} fontSize={11} photo={p.photo} />
                       <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.guest ? '🎟 ' : ''}{p.pos}</div></div>
                       <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, marginRight: 7, flexShrink: 0, ...ptStyle(pt) }}>{ptsLabel(pt)}</span>
                       {!viewOnly && (

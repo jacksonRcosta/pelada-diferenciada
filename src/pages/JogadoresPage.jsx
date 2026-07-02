@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { TEAM_CFG } from '../lib/constants'
-import { avatarColor, initials } from '../lib/utils'
+import { imageFileToDataURL } from '../lib/utils'
+import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
 import { showToast } from '../components/Toast'
 
@@ -9,10 +10,33 @@ export default function JogadoresPage({ state, update, viewOnly }) {
   const [name, setName] = useState('')
   const [pos, setPos]   = useState('Atacante')
   const [isGuest, setIsGuest] = useState(false)
+  const [photo, setPhoto] = useState(null)
   const [editPid, setEditPid] = useState(null)
   const [editPos, setEditPos] = useState('Atacante')
 
   const POSITIONS = ['Atacante', 'Meia', 'Lateral', 'Zagueiro', 'Goleiro']
+
+  // Lê a foto escolhida, redimensiona (128px, JPEG) e devolve o dataURL via cb.
+  async function readPhoto(file, cb) {
+    if (!file) return
+    try {
+      const dataURL = await imageFileToDataURL(file, 160)
+      cb(dataURL)
+    } catch (e) {
+      showToast('Não foi possível ler a imagem')
+    }
+  }
+
+  // Define/atualiza a foto de um jogador já cadastrado.
+  function setPlayerPhoto(pid, dataURL) {
+    update({ players: players.map(p => p.id === pid ? { ...p, photo: dataURL } : p) })
+    showToast('📷 Foto atualizada!')
+  }
+
+  function removePlayerPhoto(pid) {
+    update({ players: players.map(p => p.id === pid ? { ...p, photo: null } : p) })
+    showToast('Foto removida')
+  }
 
   function teamOf(pid) {
     if (!teams) return -1
@@ -32,6 +56,7 @@ export default function JogadoresPage({ state, update, viewOnly }) {
       name: trimmedName,
       pos: pos,
       guest: isGuest,
+      photo: photo || null,
       sc: {},
       cards: {},
       scTotal: {},
@@ -53,6 +78,7 @@ export default function JogadoresPage({ state, update, viewOnly }) {
     })
 
     setName('')
+    setPhoto(null)
     showToast((isGuest ? '🎟 Convidado ' : '✓ ') + trimmedName + ' adicionado!')
   }
 
@@ -95,6 +121,19 @@ export default function JogadoresPage({ state, update, viewOnly }) {
             Novo Peladeiro
           </div>
           <div style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', padding: 14, marginBottom: 10 }}>
+            <label style={labelStyle}>Foto (opcional)</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <label style={{ cursor: 'pointer', flexShrink: 0 }}>
+                {photo
+                  ? <img src={photo} alt="prévia" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--navy)' }} />
+                  : <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f0ede8', border: '2px dashed #cfcabf', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: '#aaa' }}>📷</div>}
+                <input type="file" accept="image/*" onChange={e => readPhoto(e.target.files[0], setPhoto)} style={{ display: 'none' }} />
+              </label>
+              <div style={{ fontSize: 12, color: 'var(--t3)' }}>
+                Toque na foto para escolher da galeria ou câmera.
+                {photo && <button onClick={() => setPhoto(null)} style={{ display: 'block', marginTop: 4, background: 'transparent', color: 'var(--red)', fontSize: 12, fontWeight: 700, padding: 0 }}>Remover foto</button>}
+              </div>
+            </div>
             <label style={labelStyle}>Nome</label>
             <input
               value={name}
@@ -142,15 +181,20 @@ export default function JogadoresPage({ state, update, viewOnly }) {
       )}
 
       {players.map((p, i) => {
-        const [bg, fg] = avatarColor(i)
         const ti = teamOf(p.id)
         const tc = ti >= 0 ? TEAM_CFG[ti % TEAM_CFG.length] : null
         return (
           <div key={p.id} style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 13px' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>
-                {initials(p.name)}
-              </div>
+              {viewOnly
+                ? <Avatar name={p.name} index={i} size={40} fontSize={13} photo={p.photo} />
+                : (
+                  <label style={{ cursor: 'pointer', position: 'relative', flexShrink: 0, lineHeight: 0 }} title="Alterar foto">
+                    <Avatar name={p.name} index={i} size={40} fontSize={13} photo={p.photo} />
+                    <span style={{ position: 'absolute', right: -2, bottom: -2, width: 18, height: 18, borderRadius: '50%', background: 'var(--navy)', color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--sur)' }}>📷</span>
+                    <input type="file" accept="image/*" onChange={e => readPhoto(e.target.files[0], d => setPlayerPhoto(p.id, d))} style={{ display: 'none' }} />
+                  </label>
+                )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
                   {p.name}
@@ -214,6 +258,14 @@ export default function JogadoresPage({ state, update, viewOnly }) {
           >
             Salvar Posição
           </button>
+          {players.find(p => p.id === editPid)?.photo && (
+            <button
+              onClick={() => { removePlayerPhoto(editPid); setEditPid(null) }}
+              style={{ width: '100%', padding: 12, borderRadius: 11, marginTop: 8, background: '#fce8e8', color: 'var(--red)', fontSize: 14, fontWeight: 700 }}
+            >
+              📷 Remover foto
+            </button>
+          )}
         </div>
       </Modal>
     </div>

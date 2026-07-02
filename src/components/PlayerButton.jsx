@@ -25,7 +25,7 @@ export default function PlayerButton({ player, index, onClick }) {
       borderRadius:12,padding:'12px 13px',display:'flex',alignItems:'center',gap:10,
       marginBottom:7,textAlign:'left'
     }}>
-      <Avatar name={player.name} index={index}/>
+      <Avatar name={player.name} index={index} photo={player.photo}/>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:15,fontWeight:700}}>{player.name}</div>
         <div style={{fontSize:12,color:'var(--t3)'}}>{player.pos}</div>
