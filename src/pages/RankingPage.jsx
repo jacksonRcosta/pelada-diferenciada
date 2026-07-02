@@ -1,5 +1,5 @@
 import { SCOUTS, CARDS, TEAM_CFG } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, avatarColor, initials, hasCounts, seasonEnded, bestByPosition, scoutSummary, shareText } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, avatarColor, initials, hasCounts, seasonEnded, bestByPosition, scoutSummary, shareText, seasonAwards } from '../lib/utils'
 import { showToast } from '../components/Toast'
 
 export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
@@ -39,6 +39,8 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
       bestByPosition: bestByPosition(players).map(({ pos, player }) => ({
         pos, name: player.name, pts: player.pts, sc: player.sc,
       })),
+      // Prêmios individuais da temporada (craque, artilheiro, xerifão, garçom).
+      awards: seasonAwards(players),
       roundHistory: roundHistory || [],
     }
 
@@ -86,6 +88,26 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
   // Melhores por posição da temporada atual (ao vivo, com base nos acumulados).
   const posBest = bestByPosition(players)
   const rounds = roundHistory || []
+
+  // Prêmios da temporada (ao vivo). Cada card mostra o valor da métrica.
+  const awards = seasonAwards(players)
+  const AWARD_CFG = [
+    { key: 'craque',     emoji: '🏆', title: 'Craque da temporada',    metric: p => `${ptsLabel(p.pts)} pts`,                       bg: '#FAEEDA', bd: '#BA7517', fg: '#633806' },
+    { key: 'artilheiro', emoji: '⚽', title: 'Artilheiro da temporada', metric: p => `${(p.sc.gol || 0) + (p.sc.golplaca || 0)} gol${((p.sc.gol||0)+(p.sc.golplaca||0)) > 1 ? 's' : ''}`, bg: '#FAECE7', bd: '#993C1D', fg: '#712B13' },
+    { key: 'xerifao',    emoji: '🛡️', title: 'Xerifão da temporada',    metric: p => `${(p.sc.defesa || 0) + (p.sc.desarme || 0)} defesas/desarmes`, bg: '#E1F5EE', bd: '#1D9E75', fg: '#085041' },
+    { key: 'garcom',     emoji: '🎯', title: 'Garçom da temporada',     metric: p => `${p.sc.assistencia || 0} assist.`,             bg: '#EEEDFE', bd: '#534AB7', fg: '#3C3489' },
+  ]
+  const awardCards = AWARD_CFG.filter(c => awards[c.key])
+
+  function shareAwards() {
+    if (!awardCards.length) { showToast('Sem scouts suficientes ainda.'); return }
+    const lines = ['🏆 *Pelada Diferenciada — Prêmios da temporada*', '']
+    awardCards.forEach(c => {
+      const p = awards[c.key]
+      lines.push(`${c.emoji} ${c.title}: ${p.name} (${p.pos}) — ${c.metric(p)}`)
+    })
+    shareText('Prêmios da temporada', lines.join('\n'), () => showToast('🔗 Prêmios copiados!'))
+  }
 
   function shareByPosition() {
     if (!posBest.length) { showToast('Sem scouts suficientes ainda.'); return }
@@ -181,6 +203,28 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
           )
         })}
       </div>
+
+      {awardCards.length > 0 && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 0 7px' }}>
+            <div style={{ flex: 1, fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)' }}>Prêmios da temporada</div>
+            <button onClick={shareAwards} style={{ background: '#FAEEDA', border: '1px solid #e0c79a', color: '#633806', borderRadius: 8, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>🔗 Compartilhar</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+            {awardCards.map(c => {
+              const p = awards[c.key]
+              return (
+                <div key={c.key} style={{ background: c.bg, border: `1.5px solid ${c.bd}`, borderRadius: 14, padding: '11px 12px' }}>
+                  <div style={{ fontSize: 22, lineHeight: 1 }}>{c.emoji}</div>
+                  <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: .5, textTransform: 'uppercase', color: c.fg, opacity: .8, marginTop: 5 }}>{c.title}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: c.fg, marginTop: 2 }}>{p.name}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: c.fg, opacity: .85, marginTop: 1 }}>{p.pos} · {c.metric(p)}</div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
 
       {posBest.length > 0 && (
         <>
@@ -300,6 +344,25 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
                             <span style={{ fontWeight: 700 }}>{b.name}</span>
                           </span>
                           <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, ...ptStyle(b.pts) }}>{ptsLabel(b.pts)}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {s.awards && (s.awards.craque || s.awards.artilheiro || s.awards.xerifao || s.awards.garcom) && (
+                    <>
+                      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: .8, textTransform: 'uppercase', color: 'var(--t3)', margin: '10px 0 6px' }}>Prêmios da temporada</div>
+                      {[
+                        { key: 'craque',     emoji: '🏆', label: 'Craque' },
+                        { key: 'artilheiro', emoji: '⚽', label: 'Artilheiro' },
+                        { key: 'xerifao',    emoji: '🛡️', label: 'Xerifão' },
+                        { key: 'garcom',     emoji: '🎯', label: 'Garçom' },
+                      ].filter(a => s.awards[a.key]).map(a => (
+                        <div key={a.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
+                          <span style={{ fontSize: 14 }}>{a.emoji}</span>
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ color: 'var(--t3)', fontSize: 11, textTransform: 'uppercase', fontWeight: 800 }}>{a.label}: </span>
+                            <span style={{ fontWeight: 700 }}>{s.awards[a.key].name}</span>
+                          </span>
                         </div>
                       ))}
                     </>

@@ -108,6 +108,46 @@ export function bestByPosition(players, getSc = p => p.scTotal) {
     .map(pos => ({ pos, player: groups[pos].sort((x, y) => compareScout(x.sc, y.sc))[0] }))
 }
 
+// Prêmios da temporada — computados sobre os scouts ACUMULADOS de todos os jogos
+// (scTotal). Cada prêmio elege 1 jogador por um critério objetivo; empate é
+// desempatado pela pontuação geral (compareScout). Retorna null em cada prêmio
+// quando ninguém tem a métrica > 0. `getSc` extrai o mapa de scout do jogador.
+export function seasonAwards(players, getSc = p => p.scTotal) {
+  const entries = (players || [])
+    .map(p => {
+      const sc = getSc(p) || {}
+      return {
+        name: p.name,
+        pos: p.pos,
+        sc,
+        pts: calcPoints(sc),
+        gols: (sc.gol || 0) + (sc.golplaca || 0),
+        defesas: (sc.defesa || 0) + (sc.desarme || 0),
+        assist: sc.assistencia || 0,
+      }
+    })
+
+  // Elege o melhor por uma métrica numérica; desempate por compareScout.
+  const pick = (metric) => {
+    const cand = entries.filter(e => e[metric] > 0)
+    if (!cand.length) return null
+    return cand.sort((a, b) => (b[metric] - a[metric]) || compareScout(a.sc, b.sc))[0]
+  }
+
+  const craque = bestPlayer(entries.map(e => ({ name: e.name, pos: e.pos, sc: e.sc })))
+  return {
+    craque: craque ? { name: craque.name, pos: craque.pos, sc: craque.sc, pts: calcPoints(craque.sc) } : null,
+    artilheiro: pick('gols'),
+    xerifao: pick('defesas'),
+    garcom: pick('assist'),
+  }
+}
+
+// Total de cartões de um jogador (soma de todos os tipos do mapa de cartões).
+export function totalCards(cards = {}) {
+  return Object.values(cards || {}).reduce((s, v) => s + (v || 0), 0)
+}
+
 // Monta um resumo curto de scouts de um jogador para mensagens (ex.: "2 gols, 1 assist.").
 export function scoutSummary(sc = {}) {
   const parts = []

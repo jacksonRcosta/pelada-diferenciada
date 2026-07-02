@@ -1,7 +1,7 @@
 import Modal from './Modal'
 import Avatar from './Avatar'
 import { SCOUTS, CARDS, TEAM_CFG } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, mergeScouts } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, mergeScouts, totalCards } from '../lib/utils'
 import { showToast } from './Toast'
 
 export default function ScoutModal({ pid, players, teams, open, onClose, onScoutChange, onCardChange, viewOnly }) {
@@ -88,17 +88,22 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
       </div>
 
       {/* CARTÕES */}
-      <div style={{ fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'var(--t3)', padding:'10px 14px 4px', background:'#f9f8f5', borderTop:'1px solid rgba(0,0,0,.06)', borderBottom:'1px solid rgba(0,0,0,.06)' }}>
-        Cartões (só marcação)
+      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px 4px', background:'#f9f8f5', borderTop:'1px solid rgba(0,0,0,.06)', borderBottom:'1px solid rgba(0,0,0,.06)' }}>
+        <span style={{ flex:1, fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'var(--t3)' }}>Cartões (só marcação)</span>
+        {totalCards(p.cardsTotal) > 0 && (
+          <span style={{ fontSize:10.5, fontWeight:700, color:'var(--t3)' }}>total temporada: {totalCards(p.cardsTotal)}</span>
+        )}
       </div>
       <div style={{ display:'flex', gap:8, padding:'10px 14px' }}>
         {CARDS.map(cd => {
           const cnt = (p.cards || {})[cd.id] || 0
+          const tot = (p.cardsTotal || {})[cd.id] || 0   // acumulado da temporada
           return (
             <div key={cd.id} style={{ flex:1, borderRadius:12, padding:'12px 6px', display:'flex', flexDirection:'column', alignItems:'center', gap:5, border:`2px solid ${cd.color}`, background:cd.bg }}>
               <div style={{ fontSize:26 }}>{cd.emoji}</div>
               <div style={{ fontSize:11, fontWeight:700, color:cd.color }}>{cd.name}</div>
               <div style={{ fontSize:22, fontWeight:800, color:cd.color }}>{cnt}</div>
+              {tot > 0 && <div style={{ fontSize:10, fontWeight:700, color:cd.color, opacity:.75 }}>temp.: {tot}</div>}
               <div style={{ display:'flex', gap:4 }}>
                 {cnt > 0 && <button onClick={() => chgCard(cd.id, -cnt)} style={{ width:30, height:30, borderRadius:8, background:'#fce8e8', color:'#a32d2d', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>}
                 {cnt > 0 && <button onClick={() => chgCard(cd.id, -1)}  style={{ width:30, height:30, borderRadius:8, background:'#f0f0ec', color:'#555', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>−</button>}
