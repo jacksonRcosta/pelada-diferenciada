@@ -12,7 +12,11 @@ import { showToast } from '../components/Toast'
 // A escalação (por posição) é compartilhada como imagem estilo FIFA; prêmios e
 // resultados usam o card "story" padrão.
 export default function DestaquesPage({ state }) {
-  const { players, matchHistory } = state
+  const { players, matchHistory, roundHistory } = state
+  const rounds = roundHistory || []
+  const medals = ['g', 's', 'b']
+  const medalColors = { g: '#BA7517', s: '#888', b: '#993C1D' }
+  const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('pt-BR') : '—'
 
   // Agrega os scouts da rodada atual por jogador.
   const roundAgg = {}
@@ -54,10 +58,40 @@ export default function DestaquesPage({ state }) {
     shareCard({
       eyebrow: 'Prêmios da Temporada',
       title: 'Os Craques da Pelada',
+      subtitle: `Pelada de ${new Date().toLocaleDateString('pt-BR')}`,
       rows: awardCards.map(c => {
         const p = awards[c.key]
-        return { emoji: c.emoji, name: p.name, meta: `${c.title} · ${p.pos}`, value: c.metric(p) }
+        const resumo = scoutSummary(p.sc)
+        return {
+          emoji: c.emoji,
+          name: p.name,
+          meta: resumo ? `${c.title} · ${resumo}` : `${c.title} · ${p.pos}`,
+          value: c.metric(p),
+        }
       }),
+    }, msg => showToast(msg))
+  }
+
+  function shareRound(r) {
+    const rows = []
+    if (r.mvp) rows.push({
+      emoji: '⭐',
+      name: r.mvp.name,
+      meta: scoutSummary(r.mvp.sc) ? `${r.mvp.pos} · ${scoutSummary(r.mvp.sc)}` : r.mvp.pos,
+      value: `${ptsLabel(r.mvp.pts)} pts`,
+    })
+    ;(r.top || []).slice(0, 5).forEach((p, i) => rows.push({
+      rank: i + 1,
+      medalColor: medalColors[medals[i]],
+      name: p.name,
+      meta: scoutSummary(p.sc) ? `${p.pos} · ${scoutSummary(p.sc)}` : p.pos,
+      value: ptsLabel(p.pts),
+    }))
+    shareCard({
+      eyebrow: 'Destaque da Rodada',
+      title: r.mvp ? `⭐ ${r.mvp.name}` : 'Destaque da Rodada',
+      subtitle: `Rodada de ${fmtDate(r.endedAt)}`,
+      rows,
     }, msg => showToast(msg))
   }
 
@@ -148,6 +182,49 @@ export default function DestaquesPage({ state }) {
             })}
           </div>
           {shareBtn('🔗 Compartilhar Prêmios (card)', shareAwardsCard, false)}
+        </>
+      )}
+
+      {/* DESTAQUES DAS RODADAS (histórico) */}
+      {rounds.length > 0 && (
+        <>
+          <div style={{ height: 8 }} />
+          {sectionTitle(`🌟 Destaques das rodadas (${rounds.length})`)}
+          {rounds.map((r, ri) => (
+            <details key={ri} style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', marginBottom: 10, overflow: 'hidden' }}>
+              <summary style={{ listStyle: 'none', cursor: 'pointer', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 20 }}>🌟</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>{r.mvp ? `⭐ ${r.mvp.name}` : 'Rodada'}{r.mvp ? ` · ${r.mvp.pos}` : ''}{r.mvp ? ` · ${ptsLabel(r.mvp.pts)} pts` : ''}{r.mvp && r.mvp.games ? ` · ${r.mvp.games} jogo${r.mvp.games > 1 ? 's' : ''}` : ''}</div>
+                  <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>Rodada de {fmtDate(r.endedAt)} · {r.games || (r.matches || []).length} jogo(s) na rodada</div>
+                </div>
+                <span style={{ fontSize: 11, color: 'var(--t3)' }}>ver ▾</span>
+              </summary>
+              <div style={{ borderTop: '1px solid var(--brd)', padding: '10px 14px' }}>
+                {(r.top || []).length > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: .8, textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 6 }}>Top da rodada</div>
+                    {r.top.map((p, pi) => (
+                      <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
+                        <span style={{ width: 18, fontWeight: 800, color: medalColors[medals[pi]] || '#ccc' }}>{pi + 1}</span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ fontWeight: 700 }}>{p.name}</span>
+                          <span style={{ color: 'var(--t3)', fontSize: 11 }}> · {p.pos}{scoutSummary(p.sc) ? ` · ${scoutSummary(p.sc)}` : ''}</span>
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, ...ptStyle(p.pts) }}>{ptsLabel(p.pts)}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+                {(r.matches || []).length > 0 && (
+                  <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 10 }}>
+                    {r.matches.map((m, mi) => <div key={mi}>⚽ {m.nmA} {m.sA} × {m.sB} {m.nmB}</div>)}
+                  </div>
+                )}
+                {shareBtn('🔗 Compartilhar destaque (card)', () => shareRound(r), false)}
+              </div>
+            </details>
+          ))}
         </>
       )}
     </div>

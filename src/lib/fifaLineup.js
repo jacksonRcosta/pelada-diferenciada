@@ -13,8 +13,16 @@ const CARD_BG = '#0c1712', CARD_BG2 = '#16281d'
 const POS_ABBR = {
   Goleiro: 'GOL', Zagueiro: 'ZAG', Lateral: 'LAT', Meia: 'MEI', Atacante: 'ATA',
 }
-// Ordem vertical no campo: ataque em cima, goleiro embaixo.
-const ROW_ORDER = ['Atacante', 'Meia', 'Lateral', 'Zagueiro', 'Goleiro']
+// Coordenadas no campo (fração da largura/altura da área útil) para dispor os
+// cards como uma formação — ataque em cima, goleiro embaixo, e laterais/zaga
+// espalhados horizontalmente (evita a lista "um embaixo do outro").
+const POS_COORD = {
+  Atacante: { x: 0.50, y: 0.05 },
+  Meia:     { x: 0.50, y: 0.36 },
+  Lateral:  { x: 0.76, y: 0.64 },
+  Zagueiro: { x: 0.26, y: 0.64 },
+  Goleiro:  { x: 0.50, y: 0.95 },
+}
 
 let logoImg = null
 function loadImage(src) {
@@ -119,7 +127,7 @@ function drawPlayerCard(ctx, x, y, w, h, entry, photoImg) {
   ctx.stroke()
 
   // Foto/silhueta (círculo com borda dourada).
-  const r = 62, cx = x + w / 2, cy = y + 76
+  const r = 60, cx = x + w / 2, cy = y + 80
   ctx.save()
   ctx.beginPath()
   ctx.arc(cx, cy, r, 0, Math.PI * 2)
@@ -155,16 +163,24 @@ function drawPlayerCard(ctx, x, y, w, h, entry, photoImg) {
 
   // Nome.
   ctx.fillStyle = '#fff'
-  ctx.font = '800 34px -apple-system, "Helvetica Neue", Arial, sans-serif'
+  ctx.font = '800 30px -apple-system, "Helvetica Neue", Arial, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText(fitText(ctx, (entry.name || '').toUpperCase(), w - 30), cx, cy + r + 44)
+  ctx.fillText(fitText(ctx, (entry.name || '').toUpperCase(), w - 28), cx, cy + r + 42)
+
+  // Divisória dourada.
+  ctx.strokeStyle = 'rgba(217,180,81,0.5)'
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.moveTo(x + 40, cy + r + 58)
+  ctx.lineTo(x + w - 40, cy + r + 58)
+  ctx.stroke()
 
   // Descrição (scouts).
   if (entry.meta) {
     ctx.fillStyle = GOLD
-    ctx.font = '600 24px -apple-system, "Helvetica Neue", Arial, sans-serif'
-    const lines = wrapLines(ctx, entry.meta, w - 36, 2)
-    lines.forEach((ln, i) => ctx.fillText(ln, cx, cy + r + 82 + i * 30))
+    ctx.font = '600 23px -apple-system, "Helvetica Neue", Arial, sans-serif'
+    const lines = wrapLines(ctx, entry.meta, w - 34, 2)
+    lines.forEach((ln, i) => ctx.fillText(ln, cx, cy + r + 88 + i * 28))
   }
 }
 
@@ -211,22 +227,22 @@ async function drawLineup(data) {
   ctx.fillText((data.subtitle || 'SELEÇÃO').toUpperCase(), W / 2, 236)
   ctx.letterSpacing = '0px'
 
-  // Ordena entradas na ordem do campo e as distribui verticalmente.
-  const entries = ROW_ORDER
-    .map(pos => (data.players || []).find(p => p.pos === pos))
-    .filter(Boolean)
-    .concat((data.players || []).filter(p => !ROW_ORDER.includes(p.pos)))
-
+  const entries = data.players || []
   // Pré-carrega as fotos.
   const photos = await Promise.all(entries.map(e => loadImage(e.photo)))
 
-  const cardW = 470, cardH = 300
-  const top = 340, bottom = H - 190
-  const n = entries.length
+  // Cards retrato dispostos em formação no gramado.
+  const cardW = 272, cardH = 300
+  const bandTop = 300, bandH = H - 520
+  // Posições ainda sem coordenada definida entram numa coluna de reserva.
+  let extra = 0
   entries.forEach((e, i) => {
-    const y = n === 1 ? (top + bottom) / 2 - cardH / 2
-      : top + (bottom - top - cardH) * (i / (n - 1))
-    drawPlayerCard(ctx, W / 2 - cardW / 2, y, cardW, cardH, e, photos[i])
+    const c = POS_COORD[e.pos] || { x: 0.5, y: 0.20 + (extra++) * 0.2 }
+    const cx = c.x * W
+    const cy = bandTop + c.y * bandH
+    const x = Math.max(24, Math.min(W - cardW - 24, cx - cardW / 2))
+    const y = Math.max(bandTop, Math.min(H - 210 - cardH, cy - cardH / 2))
+    drawPlayerCard(ctx, x, y, cardW, cardH, e, photos[i])
   })
 
   // Rodapé: selos.
@@ -242,7 +258,7 @@ async function drawLineup(data) {
   ctx.textAlign = 'left'
   ctx.fillStyle = GOLD
   ctx.font = '800 30px -apple-system, "Helvetica Neue", Arial, sans-serif'
-  ctx.fillText('PELADEIROS FC', 150, H - 96)
+  ctx.fillText('PELADEIROS', 150, H - 96)
   ctx.fillStyle = 'rgba(255,255,255,0.6)'
   ctx.font = '600 22px -apple-system, "Helvetica Neue", Arial, sans-serif'
   ctx.fillText('peladadiferenciada.netlify.app', 150, H - 66)
