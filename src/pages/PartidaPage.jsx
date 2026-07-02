@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { TEAM_CFG, CARDS } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, formatTime, initials, avatarColor, mergeScouts, hasCounts, sortByPosition, buildSchedule, bestPlayer, rankByScout, scoutSummary, shareText } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, formatTime, mergeScouts, hasCounts, sortByPosition, buildSchedule, bestPlayer, rankByScout, scoutSummary } from '../lib/utils'
+import { shareCard } from '../lib/shareCard'
 import { useTimer } from '../hooks/useTimer'
+import Avatar from '../components/Avatar'
 import Modal from '../components/Modal'
 import { showToast } from '../components/Toast'
 
@@ -172,16 +174,25 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
       agg[s.id].sc = mergeScouts(agg[s.id].sc, s.sc)
     }
     const ranked = rankByScout(Object.values(agg))
-    const lines = ['⚽ *Pelada Diferenciada — Resultados da rodada*', '']
-    mh.forEach((m, i) => {
-      lines.push(`Jogo ${i + 1}: ${m.nmA} ${m.sA} × ${m.sB} ${m.nmB}`)
-      if (m.mvp) lines.push(`   ⭐ Melhor: ${m.mvp.name} (${ptsLabel(m.mvp.pts)})`)
+    const d = ranked[0]
+    const rows = []
+    if (d) rows.push({
+      emoji: '🌟',
+      name: d.name,
+      meta: scoutSummary(d.sc) ? `Destaque · ${d.pos} · ${scoutSummary(d.sc)}` : `Destaque · ${d.pos}`,
+      value: `${ptsLabel(calcPoints(d.sc))} pts`,
     })
-    if (ranked[0]) {
-      const d = ranked[0]
-      lines.push('', `🌟 *Destaque da rodada:* ${d.name} · ${d.pos} — ${ptsLabel(calcPoints(d.sc))} pts${scoutSummary(d.sc) ? ` (${scoutSummary(d.sc)})` : ''}`)
-    }
-    shareText('Pelada Diferenciada — Rodada', lines.join('\n'), () => showToast('🔗 Resumo da rodada copiado!'))
+    mh.forEach((m, i) => rows.push({
+      emoji: '⚽',
+      name: `${m.nmA} ${m.sA} × ${m.sB} ${m.nmB}`,
+      meta: m.mvp ? `Jogo ${i + 1} · ⭐ ${m.mvp.name} (${ptsLabel(m.mvp.pts)})` : `Jogo ${i + 1}`,
+    }))
+    shareCard({
+      eyebrow: 'Resultados da Rodada',
+      title: d ? `🌟 ${d.name}` : 'Rodada',
+      subtitle: d ? 'Destaque da rodada' : null,
+      rows,
+    }, msg => showToast(msg))
   }
 
   const cands = subTidx >= 0 && teams[subTidx]
@@ -266,15 +277,12 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
               <div key={side} style={{ flex:1, borderTop:'1px solid var(--brd)', ...(side === 1 ? { borderLeft:'1px solid var(--brd)' } : {}) }}>
                 <div style={{ padding:'8px 10px', fontSize:11, fontWeight:800, letterSpacing:'.5px', color:'#fff', textAlign:'center', background:tcc.color }}>{tm.name}</div>
                 {pls.map(pp => {
-                  const [bg, fg] = avatarColor(players.indexOf(pp))
                   const pt = calcPoints(pp.sc)
                   const ctags = CARDS.filter(cd => (pp.cards || {})[cd.id] > 0).map(cd => `${cd.emoji}×${(pp.cards || {})[cd.id]}`).join(' ')
                   return (
                     <button key={pp.id} onClick={() => onOpenScout(pp.id)}
                       style={{ width:'100%', padding:'9px 10px', background:'transparent', borderTop:'1px solid rgba(0,0,0,.06)', display:'flex', alignItems:'center', gap:7, textAlign:'left' }}>
-                      <div style={{ width:30, height:30, borderRadius:'50%', background:bg, color:fg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:800, flexShrink:0 }}>
-                        {initials(pp.name)}
-                      </div>
+                      <Avatar name={pp.name} index={players.indexOf(pp)} size={30} fontSize={11} photo={pp.photo} />
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontSize:13, fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{pp.name}</div>
                         <div style={{ fontSize:10, color:'var(--t3)' }}>{pp.guest ? '🎟 ' : ''}{pp.pos}{ctags ? ' ' + ctags : ''}</div>
@@ -394,13 +402,10 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
         {cands.length === 0
           ? <div style={{ padding:16, textAlign:'center', color:'var(--t3)', fontSize:13 }}>Nenhum disponível</div>
           : cands.map(c => {
-              const [bg, fg] = avatarColor(players.indexOf(c))
               return (
                 <button key={c.id} onClick={() => doSub(c.id)}
                   style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 14px', borderBottom:'1px solid rgba(0,0,0,.05)', background:'transparent', textAlign:'left' }}>
-                  <div style={{ width:36, height:36, borderRadius:'50%', background:bg, color:fg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800 }}>
-                    {initials(c.name)}
-                  </div>
+                  <Avatar name={c.name} index={players.indexOf(c)} size={36} fontSize={12} photo={c.photo} />
                   <div>
                     <div style={{ fontSize:14, fontWeight:700 }}>{c.name}</div>
                     <div style={{ fontSize:12, color:'var(--t3)' }}>{c.pos}</div>

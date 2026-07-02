@@ -38,7 +38,7 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
     <Modal open={open} onClose={onClose}>
       {/* HEAD */}
       <div style={{ display:'flex', alignItems:'center', gap:11, padding:'13px 16px 12px', borderBottom:'1px solid rgba(0,0,0,.07)', position:'relative' }}>
-        <Avatar name={p.name} index={idx} size={48} fontSize={16} />
+        <Avatar name={p.name} index={idx} size={48} fontSize={16} photo={p.photo} />
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:17, fontWeight:800 }}>{p.name}</div>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3, flexWrap:'wrap' }}>
