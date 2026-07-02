@@ -152,10 +152,12 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
           const tc = ti >= 0 ? TEAM_CFG[ti % TEAM_CFG.length] : null
           const pills = [
             ...SCOUTS.filter(s => sc[s.id] > 0).map(s => (
-              <span key={s.id} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 7, fontWeight: 700, background: s.c.bg, color: s.c.dk }}>{sc[s.id]}× {s.name}</span>
+              <span key={s.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11.5, padding: '3px 8px', borderRadius: 8, fontWeight: 700, background: s.c.bg, color: s.c.dk, border: `1px solid ${s.c.fg}33` }}>
+                <b style={{ color: s.c.fg, fontSize: 12.5 }}>{sc[s.id]}×</b> {s.name}
+              </span>
             )),
             ...CARDS.filter(cd => cards[cd.id] > 0).map(cd => (
-              <span key={cd.id} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 7, fontWeight: 700, background: cd.bg, color: cd.color }}>{cd.emoji} {cards[cd.id]}</span>
+              <span key={cd.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11.5, padding: '3px 8px', borderRadius: 8, fontWeight: 700, background: cd.bg, color: cd.color, border: `1px solid ${cd.color}33` }}>{cd.emoji} <b>{cards[cd.id]}</b></span>
             ))
           ]
           return (
@@ -210,8 +212,8 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
               <summary style={{ listStyle: 'none', cursor: 'pointer', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 20 }}>🌟</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800 }}>{r.mvp ? r.mvp.name : 'Rodada'}{r.mvp ? ` · ${r.mvp.pos}` : ''}</div>
-                  <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>{fmtDate(r.endedAt)} · {r.games || (r.matches || []).length} jogo(s){r.mvp ? ` · ${ptsLabel(r.mvp.pts)} pts` : ''}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>{r.mvp ? `⭐ ${r.mvp.name}` : 'Rodada'}{r.mvp ? ` · ${r.mvp.pos}` : ''}{r.mvp ? ` · ${ptsLabel(r.mvp.pts)} pts` : ''}</div>
+                  <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>Rodada de {fmtDate(r.endedAt)} · {r.games || (r.matches || []).length} jogo(s) na rodada</div>
                 </div>
                 <span style={{ fontSize: 11, color: 'var(--t3)' }}>ver ▾</span>
               </summary>
