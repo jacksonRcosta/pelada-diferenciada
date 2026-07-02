@@ -1,6 +1,5 @@
 import { SCOUTS, CARDS, TEAM_CFG } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, hasCounts, seasonEnded, bestByPosition, scoutSummary, seasonAwards } from '../lib/utils'
-import { shareCard } from '../lib/shareCard'
+import { calcPoints, ptStyle, ptsLabel, hasCounts, seasonEnded, bestByPosition, seasonAwards } from '../lib/utils'
 import Avatar from '../components/Avatar'
 import { showToast } from '../components/Toast'
 
@@ -87,31 +86,6 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
   const medals = ['g', 's', 'b']
   const medalColors = { g: '#BA7517', s: '#888', b: '#993C1D' }
 
-  const rounds = roundHistory || []
-
-  function shareRound(r) {
-    const rows = []
-    if (r.mvp) rows.push({
-      emoji: '⭐',
-      name: r.mvp.name,
-      meta: scoutSummary(r.mvp.sc) ? `${r.mvp.pos} · ${scoutSummary(r.mvp.sc)}` : r.mvp.pos,
-      value: `${ptsLabel(r.mvp.pts)} pts`,
-    })
-    ;(r.top || []).slice(0, 5).forEach((p, i) => rows.push({
-      rank: i + 1,
-      medalColor: medalColors[medals[i]],
-      name: p.name,
-      meta: p.pos,
-      value: ptsLabel(p.pts),
-    }))
-    shareCard({
-      eyebrow: 'Destaque da Rodada',
-      title: r.mvp ? `⭐ ${r.mvp.name}` : 'Destaque da Rodada',
-      subtitle: `Rodada de ${fmtDate(r.endedAt)}`,
-      rows,
-    }, msg => showToast(msg))
-  }
-
   return (
     <div>
       {ended && (
@@ -191,51 +165,8 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
       </div>
 
       <div style={{ background: '#eef3fb', border: '1px solid #cdd9ee', borderRadius: 12, padding: '11px 13px', marginBottom: 10, fontSize: 12.5, color: 'var(--navy)', lineHeight: 1.5 }}>
-        🏟 Prêmios, melhores por posição e a <b>Seleção estilo FIFA</b> agora estão na aba <b>Destaques</b>.
+        🏟 Prêmios, melhores por posição, <b>destaques das rodadas</b> e a <b>Seleção estilo FIFA</b> agora estão na aba <b>Destaques</b>.
       </div>
-
-      {rounds.length > 0 && (
-        <>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', margin: '16px 0 7px' }}>
-            Destaques das rodadas ({rounds.length})
-          </div>
-          {rounds.map((r, ri) => (
-            <details key={ri} style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', marginBottom: 10, overflow: 'hidden' }}>
-              <summary style={{ listStyle: 'none', cursor: 'pointer', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 20 }}>🌟</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800 }}>{r.mvp ? `⭐ ${r.mvp.name}` : 'Rodada'}{r.mvp ? ` · ${r.mvp.pos}` : ''}{r.mvp ? ` · ${ptsLabel(r.mvp.pts)} pts` : ''}{r.mvp && r.mvp.games ? ` · ${r.mvp.games} jogo${r.mvp.games > 1 ? 's' : ''}` : ''}</div>
-                  <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>Rodada de {fmtDate(r.endedAt)} · {r.games || (r.matches || []).length} jogo(s) na rodada</div>
-                </div>
-                <span style={{ fontSize: 11, color: 'var(--t3)' }}>ver ▾</span>
-              </summary>
-              <div style={{ borderTop: '1px solid var(--brd)', padding: '10px 14px' }}>
-                {(r.top || []).length > 0 && (
-                  <>
-                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: .8, textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 6 }}>Top da rodada</div>
-                    {r.top.map((p, pi) => (
-                      <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 13 }}>
-                        <span style={{ width: 18, fontWeight: 800, color: medalColors[medals[pi]] || '#ccc' }}>{pi + 1}</span>
-                        <span style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ fontWeight: 700 }}>{p.name}</span>
-                          <span style={{ color: 'var(--t3)', fontSize: 11 }}> · {p.pos}{p.games ? ` · ${p.games} jogo${p.games > 1 ? 's' : ''}` : ''}</span>
-                        </span>
-                        <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, ...ptStyle(p.pts) }}>{ptsLabel(p.pts)}</span>
-                      </div>
-                    ))}
-                  </>
-                )}
-                {(r.matches || []).length > 0 && (
-                  <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 10 }}>
-                    {r.matches.map((m, mi) => <div key={mi}>⚽ {m.nmA} {m.sA} × {m.sB} {m.nmB}</div>)}
-                  </div>
-                )}
-                <button onClick={() => shareRound(r)} style={{ width: '100%', marginTop: 10, padding: 10, borderRadius: 9, background: '#e8eef8', border: '1px solid #c7d4ec', color: 'var(--navy)', fontSize: 12, fontWeight: 700 }}>🔗 Compartilhar destaque</button>
-              </div>
-            </details>
-          ))}
-        </>
-      )}
 
       {(seasonHistory || []).length > 0 && (
         <>
