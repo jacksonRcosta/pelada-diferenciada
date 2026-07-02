@@ -56,20 +56,28 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
       .filter(p => hasCounts(p.sc) || hasCounts(p.cards))
       .map(p => ({ id: p.id, name: p.name, pos: p.pos, sc: { ...p.sc }, cards: { ...p.cards }, pts: calcPoints(p.sc) }))
     const mvp = bestPlayer(matchScouts)
+    // Presença: todos os jogadores escalados nos dois times deste jogo, mesmo
+    // quem não pontuou. É o que permite contar os jogos disputados por jogador.
+    const partIds = [...new Set([...(tmA?.pids || []), ...(tmB?.pids || [])])]
     const entry = {
       nmA: tmA?.name, nmB: tmB?.name, sA: scoreA, sB: scoreB,
       scouts: matchScouts,
+      played: partIds,
       mvp: mvp ? { name: mvp.name, pos: mvp.pos, sc: mvp.sc, pts: mvp.pts } : null,
     }
     const nh = [...(matchHistory || []), entry]
-    // Contabiliza os scouts/cartões da partida no total da temporada e zera a
-    // partida atual para o próximo jogo.
+    const partSet = new Set(partIds)
+    // Contabiliza os scouts/cartões da partida no total da temporada, soma 1 jogo
+    // disputado a cada participante e zera a partida atual para o próximo jogo.
     const np = players.map(p => {
-      if (!hasCounts(p.sc) && !hasCounts(p.cards)) return p
+      const inMatch = partSet.has(p.id)
+      const hasSc = hasCounts(p.sc) || hasCounts(p.cards)
+      if (!inMatch && !hasSc) return p
       return {
         ...p,
-        scTotal: mergeScouts(p.scTotal, p.sc),
-        cardsTotal: mergeScouts(p.cardsTotal, p.cards),
+        scTotal: hasSc ? mergeScouts(p.scTotal, p.sc) : p.scTotal,
+        cardsTotal: hasSc ? mergeScouts(p.cardsTotal, p.cards) : p.cardsTotal,
+        gamesTotal: (p.gamesTotal || 0) + (inMatch ? 1 : 0),
         sc: {},
         cards: {},
       }
@@ -86,11 +94,15 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
     // Preserva no total da temporada os scouts/cartões ainda pendentes da
     // partida em andamento dos jogadores fixos; convidados são descartados.
     const kept = players.filter(p => !p.guest).map(p => {
-      if (!hasCounts(p.sc) && !hasCounts(p.cards)) return { ...p, sc: {}, cards: {} }
+      const hasSc = hasCounts(p.sc) || hasCounts(p.cards)
+      // Se havia uma partida em andamento (não finalizada) com marcações, ela
+      // conta como um jogo disputado para quem tinha scouts pendentes.
+      if (!hasSc) return { ...p, sc: {}, cards: {} }
       return {
         ...p,
         scTotal: mergeScouts(p.scTotal, p.sc),
         cardsTotal: mergeScouts(p.cardsTotal, p.cards),
+        gamesTotal: (p.gamesTotal || 0) + 1,
         sc: {}, cards: {},
       }
     })
@@ -101,7 +113,9 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
     // Agrega os scouts de todas as partidas finalizadas na rodada para apurar o
     // destaque (melhor jogador do dia) e guardar no histórico de rodadas.
     const agg = {}
+    const gamesById = {}
     for (const m of matchHistory || []) {
+      for (const id of m.played || []) gamesById[id] = (gamesById[id] || 0) + 1
       for (const s of m.scouts || []) {
         if (!agg[s.id]) agg[s.id] = { id: s.id, name: s.name, pos: s.pos, sc: {} }
         agg[s.id].sc = mergeScouts(agg[s.id].sc, s.sc)
@@ -112,8 +126,8 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
     const roundEntry = {
       endedAt: new Date().toISOString(),
       games: (matchHistory || []).length,
-      mvp: ranked[0] ? { name: ranked[0].name, pos: ranked[0].pos, sc: ranked[0].sc, pts: ranked[0].pts } : null,
-      top: ranked.slice(0, 5).map(e => ({ name: e.name, pos: e.pos, sc: e.sc, pts: e.pts })),
+      mvp: ranked[0] ? { name: ranked[0].name, pos: ranked[0].pos, sc: ranked[0].sc, pts: ranked[0].pts, games: gamesById[ranked[0].id] || 0 } : null,
+      top: ranked.slice(0, 5).map(e => ({ name: e.name, pos: e.pos, sc: e.sc, pts: e.pts, games: gamesById[e.id] || 0 })),
       matches: (matchHistory || []).map(m => ({ nmA: m.nmA, nmB: m.nmB, sA: m.sA, sB: m.sB })),
     }
     const newRoundHistory = roundEntry.mvp

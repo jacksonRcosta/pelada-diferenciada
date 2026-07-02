@@ -9,7 +9,7 @@ import { INITIAL_STATE } from '../lib/constants'
 function normalizePlayers(players) {
   return (players || []).map(p => {
     if (p.scTotal === undefined && p.cardsTotal === undefined) {
-      return { ...p, scTotal: p.sc || {}, cardsTotal: p.cards || {}, sc: {}, cards: {} }
+      return { ...p, scTotal: p.sc || {}, cardsTotal: p.cards || {}, gamesTotal: p.gamesTotal || 0, sc: {}, cards: {} }
     }
     return {
       ...p,
@@ -17,6 +17,7 @@ function normalizePlayers(players) {
       cards: p.cards || {},
       scTotal: p.scTotal || {},
       cardsTotal: p.cardsTotal || {},
+      gamesTotal: p.gamesTotal || 0,
     }
   })
 }

@@ -31,6 +31,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
           pts: calcPoints(p.scTotal),
           sc: p.scTotal || {},
           cards: p.cardsTotal || {},
+          games: p.gamesTotal || 0,
         }))
         .sort((a, b) => b.pts - a.pts),
       matchHistory: matchHistory || [],
@@ -41,7 +42,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
       roundHistory: roundHistory || [],
     }
 
-    const newPlayers = players.map(p => ({ ...p, sc: {}, cards: {}, scTotal: {}, cardsTotal: {} }))
+    const newPlayers = players.map(p => ({ ...p, sc: {}, cards: {}, scTotal: {}, cardsTotal: {}, gamesTotal: 0 }))
     update({
       players: newPlayers,
       scoreA: 0, scoreB: 0, matchFinished: false,
@@ -168,6 +169,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
                 <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                   {p.name}
                   {tc && <span style={{ background: tc.color, color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 6 }}>{teams[ti].name}</span>}
+                  {(p.gamesTotal || 0) > 0 && <span style={{ background: '#eef0f3', color: 'var(--t3)', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 6 }}>⚽ {p.gamesTotal} jogo{p.gamesTotal > 1 ? 's' : ''}</span>}
                 </div>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
                   {pills.length > 0 ? pills : <span style={{ fontSize: 11, color: '#ccc' }}>sem scouts</span>}
@@ -212,7 +214,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
               <summary style={{ listStyle: 'none', cursor: 'pointer', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 20 }}>🌟</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800 }}>{r.mvp ? `⭐ ${r.mvp.name}` : 'Rodada'}{r.mvp ? ` · ${r.mvp.pos}` : ''}{r.mvp ? ` · ${ptsLabel(r.mvp.pts)} pts` : ''}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>{r.mvp ? `⭐ ${r.mvp.name}` : 'Rodada'}{r.mvp ? ` · ${r.mvp.pos}` : ''}{r.mvp ? ` · ${ptsLabel(r.mvp.pts)} pts` : ''}{r.mvp && r.mvp.games ? ` · ${r.mvp.games} jogo${r.mvp.games > 1 ? 's' : ''}` : ''}</div>
                   <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>Rodada de {fmtDate(r.endedAt)} · {r.games || (r.matches || []).length} jogo(s) na rodada</div>
                 </div>
                 <span style={{ fontSize: 11, color: 'var(--t3)' }}>ver ▾</span>
@@ -226,7 +228,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
                         <span style={{ width: 18, fontWeight: 800, color: medalColors[medals[pi]] || '#ccc' }}>{pi + 1}</span>
                         <span style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ fontWeight: 700 }}>{p.name}</span>
-                          <span style={{ color: 'var(--t3)', fontSize: 11 }}> · {p.pos}</span>
+                          <span style={{ color: 'var(--t3)', fontSize: 11 }}> · {p.pos}{p.games ? ` · ${p.games} jogo${p.games > 1 ? 's' : ''}` : ''}</span>
                         </span>
                         <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, ...ptStyle(p.pts) }}>{ptsLabel(p.pts)}</span>
                       </div>
@@ -280,7 +282,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
                           <span style={{ width: 18, fontWeight: 800, color: medalColors[medals[pi]] || '#ccc' }}>{pi + 1}</span>
                           <span style={{ flex: 1, minWidth: 0 }}>
                             <span style={{ fontWeight: 700 }}>{p.name}</span>
-                            <span style={{ color: 'var(--t3)', fontSize: 11 }}> · {p.pos}{p.team ? ' · ' + p.team : ''}</span>
+                            <span style={{ color: 'var(--t3)', fontSize: 11 }}> · {p.pos}{p.team ? ' · ' + p.team : ''}{p.games ? ` · ${p.games} jogo${p.games > 1 ? 's' : ''}` : ''}</span>
                           </span>
                           <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, ...ptStyle(p.pts) }}>{ptsLabel(p.pts)}</span>
                         </div>
