@@ -87,45 +87,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
   const medals = ['g', 's', 'b']
   const medalColors = { g: '#BA7517', s: '#888', b: '#993C1D' }
 
-  // Melhores por posição da temporada atual (ao vivo, com base nos acumulados).
-  const posBest = bestByPosition(players)
   const rounds = roundHistory || []
-
-  // Prêmios da temporada (ao vivo). Cada card mostra o valor da métrica.
-  const awards = seasonAwards(players)
-  const AWARD_CFG = [
-    { key: 'craque',     emoji: '🏆', title: 'Craque da temporada',    metric: p => `${ptsLabel(p.pts)} pts`,                       bg: '#FAEEDA', bd: '#BA7517', fg: '#633806' },
-    { key: 'artilheiro', emoji: '⚽', title: 'Artilheiro da temporada', metric: p => `${(p.sc.gol || 0) + (p.sc.golplaca || 0)} gol${((p.sc.gol||0)+(p.sc.golplaca||0)) > 1 ? 's' : ''}`, bg: '#FAECE7', bd: '#993C1D', fg: '#712B13' },
-    { key: 'xerifao',    emoji: '🛡️', title: 'Xerifão da temporada',    metric: p => `${(p.sc.defesa || 0) + (p.sc.desarme || 0)} defesas/desarmes`, bg: '#E1F5EE', bd: '#1D9E75', fg: '#085041' },
-    { key: 'garcom',     emoji: '🎯', title: 'Garçom da temporada',     metric: p => `${p.sc.assistencia || 0} assist.`,             bg: '#EEEDFE', bd: '#534AB7', fg: '#3C3489' },
-  ]
-  const awardCards = AWARD_CFG.filter(c => awards[c.key])
-
-  function shareAwards() {
-    if (!awardCards.length) { showToast('Sem scouts suficientes ainda.'); return }
-    shareCard({
-      eyebrow: 'Prêmios da Temporada',
-      title: 'Os Craques da Pelada',
-      rows: awardCards.map(c => {
-        const p = awards[c.key]
-        return { emoji: c.emoji, name: p.name, meta: `${c.title} · ${p.pos}`, value: c.metric(p) }
-      }),
-    }, msg => showToast(msg))
-  }
-
-  function shareByPosition() {
-    if (!posBest.length) { showToast('Sem scouts suficientes ainda.'); return }
-    shareCard({
-      eyebrow: 'Melhores por Posição',
-      title: 'Seleção da Temporada',
-      rows: posBest.map(({ pos, player }) => ({
-        emoji: '🏅',
-        name: player.name,
-        meta: scoutSummary(player.sc) ? `${pos} · ${scoutSummary(player.sc)}` : pos,
-        value: `${ptsLabel(player.pts)} pts`,
-      })),
-    }, msg => showToast(msg))
-  }
 
   function shareRound(r) {
     const rows = []
@@ -228,49 +190,9 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
         })}
       </div>
 
-      {awardCards.length > 0 && (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 0 7px' }}>
-            <div style={{ flex: 1, fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)' }}>Prêmios da temporada</div>
-            <button onClick={shareAwards} style={{ background: '#FAEEDA', border: '1px solid #e0c79a', color: '#633806', borderRadius: 8, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>🔗 Compartilhar</button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
-            {awardCards.map(c => {
-              const p = awards[c.key]
-              return (
-                <div key={c.key} style={{ background: c.bg, border: `1.5px solid ${c.bd}`, borderRadius: 14, padding: '11px 12px' }}>
-                  <div style={{ fontSize: 22, lineHeight: 1 }}>{c.emoji}</div>
-                  <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: .5, textTransform: 'uppercase', color: c.fg, opacity: .8, marginTop: 5 }}>{c.title}</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: c.fg, marginTop: 2 }}>{p.name}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: c.fg, opacity: .85, marginTop: 1 }}>{p.pos} · {c.metric(p)}</div>
-                </div>
-              )
-            })}
-          </div>
-        </>
-      )}
-
-      {posBest.length > 0 && (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 0 7px' }}>
-            <div style={{ flex: 1, fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)' }}>Melhores por posição (temporada)</div>
-            <button onClick={shareByPosition} style={{ background: '#FAEEDA', border: '1px solid #e0c79a', color: '#633806', borderRadius: 8, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>🔗 Compartilhar</button>
-          </div>
-          <div style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', marginBottom: 10, overflow: 'hidden' }}>
-            {posBest.map(({ pos, player }, i) => (
-              <div key={pos} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderBottom: i < posBest.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
-                <span style={{ fontSize: 18 }}>🏅</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: .5, textTransform: 'uppercase', color: 'var(--t3)' }}>{pos}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>{player.name}</div>
-                  {scoutSummary(player.sc) && <div style={{ fontSize: 11, color: 'var(--t3)' }}>{scoutSummary(player.sc)}</div>}
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 700, padding: '4px 11px', borderRadius: 14, ...ptStyle(player.pts) }}>{ptsLabel(player.pts)}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+      <div style={{ background: '#eef3fb', border: '1px solid #cdd9ee', borderRadius: 12, padding: '11px 13px', marginBottom: 10, fontSize: 12.5, color: 'var(--navy)', lineHeight: 1.5 }}>
+        🏟 Prêmios, melhores por posição e a <b>Seleção estilo FIFA</b> agora estão na aba <b>Destaques</b>.
+      </div>
 
       {rounds.length > 0 && (
         <>
