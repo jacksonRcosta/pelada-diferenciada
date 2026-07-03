@@ -86,10 +86,10 @@ export default function PeladasPage({ onSelect, onLogout }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {peladas.map(p => (
               <div key={p.id} style={{ background: 'var(--sur)', border: '1px solid var(--brd)', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button onClick={() => onSelect({ id: p.id, nome: p.nome })} style={{ flex: 1, textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+                <button onClick={() => onSelect({ id: p.id, nome: p.nome, role: p.role })} style={{ flex: 1, textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--txt)' }}>⚽ {p.nome}</div>
                   <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>
-                    {p.owner_id === user?.id ? 'Proprietário' : 'Membro'}
+                    {p.role === 'owner' ? 'Proprietário' : p.role === 'editor' ? 'Editor' : 'Visualizador'}
                   </div>
                 </button>
                 {p.owner_id === user?.id && (
@@ -98,7 +98,7 @@ export default function PeladasPage({ onSelect, onLogout }) {
                     <button onClick={() => handleExcluir(p)} title="Excluir" style={iconBtn}>🗑️</button>
                   </>
                 )}
-                <button onClick={() => onSelect({ id: p.id, nome: p.nome })} style={{ background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>Abrir</button>
+                <button onClick={() => onSelect({ id: p.id, nome: p.nome, role: p.role })} style={{ background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>Abrir</button>
               </div>
             ))}
           </div>

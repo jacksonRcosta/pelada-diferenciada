@@ -3,6 +3,7 @@ import { useGameState } from '../hooks/useGameState'
 import SyncBar from '../components/SyncBar'
 import Toast from '../components/Toast'
 import ScoutModal from '../components/ScoutModal'
+import MembrosModal from '../components/MembrosModal'
 import PartidaPage from './PartidaPage'
 import ScoutsPage from './ScoutsPage'
 import TimesPage from './TimesPage'
@@ -21,11 +22,14 @@ const TABS = [
 ]
 
 // UI principal do jogo, agora escopada a uma pelada (peladaId).
-export default function GameShell({ peladaId, peladaNome, onTrocarPelada, onLogout }) {
-  const { state, update, syncStatus } = useGameState(peladaId, false)
+export default function GameShell({ peladaId, peladaNome, role = 'owner', meuId, onTrocarPelada, onLogout }) {
+  const isViewer = role === 'viewer'
+  const isOwner = role === 'owner'
+  const { state, update, syncStatus } = useGameState(peladaId, isViewer)
   const [tab, setTab] = useState('partida')
   const [scoutPid, setScoutPid] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [membrosOpen, setMembrosOpen] = useState(false)
 
   const syncLabel = {
     syncing: '⟳ sincronizando...',
@@ -75,7 +79,7 @@ export default function GameShell({ peladaId, peladaNome, onTrocarPelada, onLogo
             {peladaNome || 'Pelada'}
           </div>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', marginTop: 2 }}>
-            Toque no jogador para marcar
+            {isViewer ? '👁 Modo visualização' : 'Toque no jogador para marcar'}
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, position: 'relative' }}>
@@ -87,6 +91,12 @@ export default function GameShell({ peladaId, peladaNome, onTrocarPelada, onLogo
           </button>
           {menuOpen && (
             <div style={{ position: 'absolute', top: 44, right: 0, background: '#fff', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.25)', overflow: 'hidden', zIndex: 100, minWidth: 190 }}>
+              {isOwner && (
+                <button onClick={() => { setMenuOpen(false); setMembrosOpen(true) }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer', borderBottom: '1px solid var(--brd)' }}>
+                  👥 Membros / convidar
+                </button>
+              )}
               <button onClick={() => { setMenuOpen(false); onTrocarPelada && onTrocarPelada() }}
                 style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer', borderBottom: '1px solid var(--brd)' }}>
                 🔄 Trocar de pelada
@@ -113,11 +123,11 @@ export default function GameShell({ peladaId, peladaNome, onTrocarPelada, onLogo
       </div>
 
       <div style={{ padding: '12px 12px 100px' }}>
-        {tab === 'partida'   && <PartidaPage   state={state} update={update} viewOnly={false} onOpenScout={openScout} />}
+        {tab === 'partida'   && <PartidaPage   state={state} update={update} viewOnly={isViewer} onOpenScout={openScout} />}
         {tab === 'scouts'    && <ScoutsPage    state={state} onOpenScout={openScout} />}
-        {tab === 'times'     && <TimesPage     state={state} update={update} viewOnly={false} />}
-        {tab === 'jogadores' && <JogadoresPage state={state} update={update} viewOnly={false} />}
-        {tab === 'ranking'   && <RankingPage   state={state} update={update} viewOnly={false} onOpenScout={openScoutFromRanking} />}
+        {tab === 'times'     && <TimesPage     state={state} update={update} viewOnly={isViewer} />}
+        {tab === 'jogadores' && <JogadoresPage state={state} update={update} viewOnly={isViewer} />}
+        {tab === 'ranking'   && <RankingPage   state={state} update={update} viewOnly={isViewer} onOpenScout={openScoutFromRanking} />}
         {tab === 'destaques' && <DestaquesPage state={state} />}
       </div>
 
@@ -129,7 +139,15 @@ export default function GameShell({ peladaId, peladaNome, onTrocarPelada, onLogo
         onClose={() => setScoutPid(null)}
         onScoutChange={handleScoutChange}
         onCardChange={handleCardChange}
-        viewOnly={false}
+        viewOnly={isViewer}
+      />
+
+      <MembrosModal
+        open={membrosOpen}
+        onClose={() => setMembrosOpen(false)}
+        peladaId={peladaId}
+        peladaNome={peladaNome}
+        meuId={meuId}
       />
 
       <Toast />
