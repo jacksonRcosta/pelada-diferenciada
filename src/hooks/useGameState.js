@@ -26,19 +26,21 @@ function normalizeState(data) {
   return { ...INITIAL_STATE, ...data, players: normalizePlayers(data.players) }
 }
 
-export function useGameState(viewOnly = false) {
+export function useGameState(peladaId, viewOnly = false) {
   const [state, setState] = useState(INITIAL_STATE)
   const [syncStatus, setSyncStatus] = useState('idle')
   const lastSaved = useRef('')
   const saveTimer = useRef(null)
 
-  // Carrega dados iniciais
+  // Carrega dados da pelada selecionada (recarrega ao trocar de pelada)
   useEffect(() => {
+    if (!peladaId) return
+    setState(INITIAL_STATE)
+    lastSaved.current = ''
     setSyncStatus('syncing')
-    loadState()
+    loadState(peladaId)
       .then(d => {
         if (d && d.players !== undefined) {
-          console.log('Dados carregados do banco:', JSON.stringify(d).slice(0, 200))
           setState(normalizeState(d))
           lastSaved.current = JSON.stringify(d)
         }
@@ -49,32 +51,29 @@ export function useGameState(viewOnly = false) {
         console.error('Erro ao carregar:', err)
         setSyncStatus('error')
       })
-  }, [])
+  }, [peladaId])
 
   // Polling — só atualiza se tiver dados válidos com players
   useEffect(() => {
-    const unsub = subscribeToChanges(data => {
+    if (!peladaId) return
+    const unsub = subscribeToChanges(peladaId, data => {
       if (!data || data.players === undefined) return
       const raw = JSON.stringify(data)
       if (raw !== lastSaved.current) {
-        console.log('Dados atualizados via polling')
         lastSaved.current = raw
         setState(normalizeState(data))
       }
     })
     return unsub
-  }, [])
+  }, [peladaId])
 
   const update = useCallback((patch) => {
-    if (viewOnly) return
+    if (viewOnly || !peladaId) return
 
     setState(prev => {
       const next = typeof patch === 'function'
         ? patch(prev)
         : { ...prev, ...patch }
-
-      // Log para debug
-      console.log('update chamado, players:', JSON.stringify(next.players))
 
       if (saveTimer.current) clearTimeout(saveTimer.current)
       saveTimer.current = setTimeout(async () => {
@@ -83,10 +82,9 @@ export function useGameState(viewOnly = false) {
 
         setSyncStatus('syncing')
         try {
-          await saveState(next)
+          await saveState(peladaId, next)
           lastSaved.current = serialized
           setSyncStatus('ok')
-          console.log('Salvo! Players:', JSON.stringify(next.players))
           setTimeout(() => setSyncStatus('idle'), 2000)
         } catch (err) {
           console.error('Erro ao salvar:', err)
@@ -97,7 +95,7 @@ export function useGameState(viewOnly = false) {
 
       return next
     })
-  }, [viewOnly])
+  }, [viewOnly, peladaId])
 
   return { state, update, syncStatus }
 }

@@ -1,39 +1,27 @@
-// Configuração via variáveis de ambiente (CRA). Fallback mantém compatibilidade
-// caso o .env não esteja definido no ambiente de build.
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || 'https://ptvtnifhnzyayqmbpxtg.supabase.co'
-const ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dnRuaWZobnp5YXlxbWJweHRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNTc4MzUsImV4cCI6MjA5NDYzMzgzNX0.umrGxWPIq87t5w3vr8N53QF46ijklRncac2HNStuJS8'
+// Estado de jogo escopado por PELADA (tabela pelada_state), via SDK autenticado.
+// Substituiu o acesso REST anônimo ao registro global pd_state id=main.
+import { supabase } from './supabaseClient'
 
-const BASE_URL = SUPABASE_URL.replace(/\/$/, '') + '/rest/v1'
+// Reexport para compatibilidade com imports antigos.
+export { supabase }
 
-// Leitura e escrita usam a anon key. A persistência é garantida pelas policies
-// RLS (leitura_publica / escrita_publica) — a service_role key NÃO deve viver
-// no frontend.
-const HEADERS = {
-  'apikey': ANON_KEY,
-  'Authorization': 'Bearer ' + ANON_KEY,
-  'Content-Type': 'application/json',
-  'Accept': 'application/json',
-}
-const READ_HEADERS = HEADERS
-
-export const supabase = null
-
-export async function loadState() {
-  const res = await fetch(
-    BASE_URL + '/pd_state?id=eq.main&select=data',
-    { headers: READ_HEADERS }
-  )
-  if (!res.ok) {
-    const txt = await res.text()
-    throw new Error('loadState ' + res.status + ': ' + txt)
-  }
-  const rows = await res.json()
-  console.log('loadState rows:', rows.length, rows.length > 0 ? JSON.stringify(rows[0].data).slice(0,100) : 'vazio')
-  if (!rows || !rows.length) return null
-  return rows[0].data || null
+export async function loadState(peladaId) {
+  if (!peladaId) return null
+  const { data, error } = await supabase
+    .from('pelada_state')
+    .select('data')
+    .eq('pelada_id', peladaId)
+    .maybeSingle()
+  if (error) throw new Error('loadState: ' + error.message)
+  return data?.data || null
 }
 
-export async function saveState(obj) {
+export async function saveState(peladaId, obj) {
+  if (!peladaId) throw new Error('saveState sem peladaId')
+
+  // WHITELIST — todo campo NOVO de topo do estado precisa ser adicionado aqui,
+  // senão NÃO persiste (some ao recarregar). Campos aninhados (mvp/scouts em
+  // matchHistory, awards em seasonHistory) persistem por estarem dentro.
   const toSave = {
     players:      Array.isArray(obj.players) ? obj.players : [],
     nextId:       obj.nextId || 1,
@@ -50,38 +38,23 @@ export async function saveState(obj) {
     seasonHistory: Array.isArray(obj.seasonHistory) ? obj.seasonHistory : [],
   }
 
-  console.log('saveState players:', JSON.stringify(toSave.players).slice(0, 200))
-
-  // Upsert: insere a linha 'main' se não existir, ou atualiza se já existir.
-  // Evita o caso em que um PATCH em linha inexistente "salva" 0 registros.
-  const res = await fetch(
-    BASE_URL + '/pd_state',
-    {
-      method: 'POST',
-      headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({
-        id: 'main',
-        data: toSave,
-        updated_at: new Date().toISOString()
-      })
-    }
-  )
-
-  console.log('saveState status:', res.status)
-
-  if (!res.ok) {
-    const txt = await res.text()
-    throw new Error('saveState ' + res.status + ': ' + txt)
-  }
+  const { error } = await supabase
+    .from('pelada_state')
+    .upsert(
+      { pelada_id: peladaId, data: toSave, updated_at: new Date().toISOString() },
+      { onConflict: 'pelada_id' }
+    )
+  if (error) throw new Error('saveState: ' + error.message)
 }
 
-// Polling a cada 4 segundos — permite que várias pessoas marquem a pelada
-// "em tempo real": cada cliente escreve no mesmo registro e relê as mudanças.
-let lastPolled = ''
-export function subscribeToChanges(cb) {
+// Polling a cada 4s — mantém a marcação "em tempo real" entre os membros
+// da MESMA pelada. Cada peladaId tem seu próprio ciclo de polling.
+export function subscribeToChanges(peladaId, cb) {
+  if (!peladaId) return () => {}
+  let lastPolled = ''
   const iv = setInterval(async () => {
     try {
-      const data = await loadState()
+      const data = await loadState(peladaId)
       if (data && data.players !== undefined) {
         const raw = JSON.stringify(data)
         if (raw !== lastPolled) {
@@ -89,7 +62,7 @@ export function subscribeToChanges(cb) {
           cb(data)
         }
       }
-    } catch(e) {
+    } catch (e) {
       console.warn('Polling error:', e.message)
     }
   }, 4000)
