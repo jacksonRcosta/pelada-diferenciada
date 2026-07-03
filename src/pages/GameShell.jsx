@@ -4,6 +4,7 @@ import SyncBar from '../components/SyncBar'
 import Toast from '../components/Toast'
 import ScoutModal from '../components/ScoutModal'
 import MembrosModal from '../components/MembrosModal'
+import ThemeToggle from '../components/ThemeToggle'
 import PartidaPage from './PartidaPage'
 import ScoutsPage from './ScoutsPage'
 import TimesPage from './TimesPage'
@@ -86,11 +87,14 @@ export default function GameShell({ peladaId, peladaNome, role = 'owner', meuId,
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>
             {syncLabel[syncStatus] || ''}
           </div>
-          <button onClick={() => setMenuOpen(o => !o)} style={{ background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.3)', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer' }}>
-            ☰ Menu
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <ThemeToggle variant="light" size={32} />
+            <button onClick={() => setMenuOpen(o => !o)} style={{ background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.3)', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer' }}>
+              ☰ Menu
+            </button>
+          </div>
           {menuOpen && (
-            <div style={{ position: 'absolute', top: 44, right: 0, background: '#fff', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.25)', overflow: 'hidden', zIndex: 100, minWidth: 190 }}>
+            <div style={{ position: 'absolute', top: 44, right: 0, background: 'var(--sur)', borderRadius: 10, boxShadow: '0 8px 24px var(--shadow)', overflow: 'hidden', zIndex: 100, minWidth: 190 }}>
               {isOwner && (
                 <button onClick={() => { setMenuOpen(false); setMembrosOpen(true) }}
                   style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer', borderBottom: '1px solid var(--brd)' }}>
@@ -110,7 +114,7 @@ export default function GameShell({ peladaId, peladaNome, role = 'owner', meuId,
         </div>
       </div>
 
-      <div style={{ display: 'flex', background: 'var(--sur)', borderBottom: '2px solid #e5e2db', position: 'sticky', top: 0, zIndex: 50 }}>
+      <div style={{ display: 'flex', background: 'var(--sur)', borderBottom: '2px solid var(--brd)', position: 'sticky', top: 0, zIndex: 50 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             flex: 1, padding: '11px 2px 10px', border: 'none', background: 'transparent',

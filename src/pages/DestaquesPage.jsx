@@ -102,7 +102,7 @@ export default function DestaquesPage({ state }) {
   const shareBtn = (label, onClick, primary) => (
     <button onClick={onClick} style={{
       width: '100%', padding: 13, borderRadius: 11, marginTop: 4,
-      background: primary ? 'linear-gradient(135deg,#0f4a27,#0b3d1f)' : '#f0ede8',
+      background: primary ? 'linear-gradient(135deg,#0f4a27,#0b3d1f)' : 'var(--sur3)',
       color: primary ? '#fff' : 'var(--txt)',
       border: primary ? '1.5px solid #d9b451' : '1px solid var(--brd)',
       fontSize: 14, fontWeight: 700,
@@ -113,7 +113,7 @@ export default function DestaquesPage({ state }) {
     return (
       <div style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', overflow: 'hidden', marginBottom: 10 }}>
         {best.map(({ pos, player }, i) => (
-          <div key={pos} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderBottom: i < best.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
+          <div key={pos} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderBottom: i < best.length - 1 ? '1px solid var(--divider)' : 'none' }}>
             <span style={{ fontSize: 10, fontWeight: 800, width: 34, color: 'var(--t3)' }}>{pos.slice(0, 3).toUpperCase()}</span>
             <Avatar name={player.name} index={i} size={34} fontSize={11} photo={player.photo} />
             <div style={{ flex: 1, minWidth: 0 }}>

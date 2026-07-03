@@ -68,7 +68,7 @@ export default function TimesPage({ state, update, viewOnly }) {
   // Jogadores cadastrados que ainda não pertencem a nenhum time.
   const unassigned = teams ? players.filter(p => !teams.some(t => t.pids.includes(p.id))) : []
 
-  const inp = { padding: '11px 12px', fontSize: 16, border: '1.5px solid #e0ddd6', borderRadius: 10, background: '#f9f8f5', color: 'var(--txt)', textAlign: 'center' }
+  const inp = { padding: '11px 12px', fontSize: 16, border: '1.5px solid var(--brd)', borderRadius: 10, background: 'var(--sur2)', color: 'var(--txt)', textAlign: 'center' }
   const lbl = { display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: '.8px', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 5 }
 
   return (
@@ -82,7 +82,7 @@ export default function TimesPage({ state, update, viewOnly }) {
               <div><label style={lbl}>Jog./Time</label><input type="number" value={ppt} min={0} max={30} onChange={e => setPpt(+e.target.value)} style={{ ...inp, width: 75 }} /></div>
               <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <button onClick={sortear} style={{ padding: '12px 16px', borderRadius: 10, background: 'var(--green)', color: '#fff', fontSize: 13, fontWeight: 700 }}>⚡ Sortear</button>
-                <button onClick={limpar} style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #ddd', background: 'transparent', color: '#888', fontSize: 12, fontWeight: 700 }}>✕ Limpar</button>
+                <button onClick={limpar} style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid var(--brd)', background: 'transparent', color: 'var(--t3)', fontSize: 12, fontWeight: 700 }}>✕ Limpar</button>
               </div>
             </div>
             <div style={{ marginTop: 12 }}>
@@ -143,14 +143,14 @@ export default function TimesPage({ state, update, viewOnly }) {
                 {pls.map(p => {
                   const pt = calcPoints(p.scTotal)
                   return (
-                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid rgba(0,0,0,.06)', background: 'var(--sur)' }}>
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid var(--divider)', background: 'var(--sur)' }}>
                       <Avatar name={p.name} index={players.indexOf(p)} size={34} fontSize={11} photo={p.photo} />
                       <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.guest ? '🎟 ' : ''}{p.pos}</div></div>
                       <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, marginRight: 7, flexShrink: 0, ...ptStyle(pt) }}>{ptsLabel(pt)}</span>
                       {!viewOnly && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                           {teams.map((_, k) => k !== t && (
-                            <button key={k} onClick={() => move(p.id, k)} style={{ background: '#f0ede8', border: '1px solid #ddd', color: '#444', borderRadius: 7, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>
+                            <button key={k} onClick={() => move(p.id, k)} style={{ background: 'var(--sur3)', border: '1px solid var(--brd)', color: 'var(--t2)', borderRadius: 7, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>
                               → {teams[k].name}
                             </button>
                           ))}
@@ -165,18 +165,18 @@ export default function TimesPage({ state, update, viewOnly }) {
           {unassigned.length > 0 && (
             <>
               <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', margin: '14px 0 7px' }}>Sem time ({unassigned.length})</div>
-              <div style={{ borderRadius: 14, border: '2px dashed #cfcabf', marginBottom: 12, overflow: 'hidden', background: 'var(--sur)' }}>
+              <div style={{ borderRadius: 14, border: '2px dashed var(--brd)', marginBottom: 12, overflow: 'hidden', background: 'var(--sur)' }}>
                 {unassigned.map(p => {
                   const pt = calcPoints(p.scTotal)
                   return (
-                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid rgba(0,0,0,.06)' }}>
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid var(--divider)' }}>
                       <Avatar name={p.name} index={players.indexOf(p)} size={34} fontSize={11} photo={p.photo} />
                       <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.guest ? '🎟 ' : ''}{p.pos}</div></div>
                       <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 10, marginRight: 7, flexShrink: 0, ...ptStyle(pt) }}>{ptsLabel(pt)}</span>
                       {!viewOnly && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                           {teams.map((tm, k) => (
-                            <button key={k} onClick={() => move(p.id, k)} style={{ background: '#f0ede8', border: '1px solid #ddd', color: '#444', borderRadius: 7, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>
+                            <button key={k} onClick={() => move(p.id, k)} style={{ background: 'var(--sur3)', border: '1px solid var(--brd)', color: 'var(--t2)', borderRadius: 7, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>
                               → {tm.name}
                             </button>
                           ))}
@@ -195,7 +195,7 @@ export default function TimesPage({ state, update, viewOnly }) {
               const nmA = teams[g.a]?.name || '?', nmB = teams[g.b]?.name || '?'
               const cA = TEAM_CFG[g.a % TEAM_CFG.length], cB = TEAM_CFG[g.b % TEAM_CFG.length]
               return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 13px', borderBottom: i < schedule.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 13px', borderBottom: i < schedule.length - 1 ? '1px solid var(--divider)' : 'none' }}>
                   <div style={{ flex: 1, fontSize: 12 }}>
                     {g.done && <span style={{ fontSize: 10, background: '#e8eef8', color: 'var(--navy)', borderRadius: 6, padding: '1px 6px', fontWeight: 700, marginRight: 4 }}>Enc.</span>}
                     <b style={{ color: 'var(--t2)' }}>Jogo {i + 1}: </b>
@@ -206,7 +206,7 @@ export default function TimesPage({ state, update, viewOnly }) {
                   </div>
                   {!viewOnly && (
                     <button onClick={() => update({ schedule: schedule.map((s, si) => si === i ? { ...s, a: s.b, b: s.a } : s) })}
-                      style={{ background: '#f0ede8', border: '1px solid #ddd', color: '#444', borderRadius: 7, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>⇄</button>
+                      style={{ background: 'var(--sur3)', border: '1px solid var(--brd)', color: 'var(--t2)', borderRadius: 7, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>⇄</button>
                   )}
                 </div>
               )

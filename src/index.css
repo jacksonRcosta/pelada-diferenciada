@@ -2,11 +2,28 @@
 :root {
   --navy: #1a3a6b; --navy2: #0d2347; --gold: #c9a84c;
   --green: #15805e; --red: #c0392b;
-  --bg: #f0ede8; --sur: #fff; --brd: rgba(0,0,0,.09);
+  --bg: #f0ede8; --sur: #fff; --sur2: #f9f8f5; --sur3: #f0ede8;
+  --brd: rgba(0,0,0,.09); --divider: rgba(0,0,0,.05);
   --txt: #1a1a18; --t2: #6b6b66; --t3: #aaa;
+  --shadow: rgba(0,0,0,.15); --overlay: rgba(0,0,0,.5);
+  --toast-bg: #1a1a18; --toast-txt: #f4f2ed;
+  --info-bg: #eef3fb; --info-brd: #cdd9ee;
+}
+:root[data-theme="dark"] {
+  --navy: #24528f; --navy2: #14294a; --gold: #d4b45e;
+  --green: #1f9c74; --red: #d1503f;
+  --bg: #0f1420; --sur: #171d2b; --sur2: #1e2534; --sur3: #232b3c;
+  --brd: rgba(255,255,255,.11); --divider: rgba(255,255,255,.07);
+  --txt: #e8eaf0; --t2: #a9b0bf; --t3: #7c8496;
+  --shadow: rgba(0,0,0,.5); --overlay: rgba(0,0,0,.65);
+  --toast-bg: #e8eaf0; --toast-txt: #171d2b;
+  --info-bg: #1b2740; --info-brd: #2c3d5e;
 }
 html { height: 100%; -webkit-text-size-adjust: 100%; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-       background: var(--bg); color: var(--txt); min-height: 100%; overflow-x: hidden; }
+       background: var(--bg); color: var(--txt); min-height: 100%; overflow-x: hidden;
+       transition: background .2s ease, color .2s ease; }
 button { font-family: inherit; cursor: pointer; border: none; outline: none; -webkit-appearance: none; }
-input, select { font-family: inherit; -webkit-appearance: none; appearance: none; outline: none; }
+input, select, textarea { font-family: inherit; -webkit-appearance: none; appearance: none; outline: none;
+       background: var(--sur); color: var(--txt); }
+input::placeholder, textarea::placeholder { color: var(--t3); }

@@ -250,14 +250,14 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
       {/* CRONÔMETRO */}
       {tmA && tmB && !matchFinished && (
         <div style={cardStyle()}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 13px', background:'#f0ede8', borderBottom:'1px solid var(--brd)', flexWrap:'wrap' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 13px', background:'var(--sur3)', borderBottom:'1px solid var(--brd)', flexWrap:'wrap' }}>
             <label style={{ fontSize:11, fontWeight:700, color:'var(--t3)' }}>Duração (min):</label>
             <input type="number" defaultValue={25} min={1} max={120}
               onChange={e => timer.setMin(+e.target.value || 25)}
-              style={{ width:62, padding:'7px 10px', fontSize:15, border:'1.5px solid #ddd', borderRadius:8, background:'var(--sur)', color:'var(--txt)', textAlign:'center', marginLeft:6 }} />
+              style={{ width:62, padding:'7px 10px', fontSize:15, border:'1.5px solid var(--brd)', borderRadius:8, background:'var(--sur)', color:'var(--txt)', textAlign:'center', marginLeft:6 }} />
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 13px', background:'#f9f8f5' }}>
-            <button onClick={timer.reset} style={{ width:44, height:44, borderRadius:10, background:'#f0f0ec', color:'#555', fontSize:13, display:'flex', alignItems:'center', justifyContent:'center' }}>↺</button>
+          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 13px', background:'var(--sur2)' }}>
+            <button onClick={timer.reset} style={{ width:44, height:44, borderRadius:10, background:'var(--sur3)', color:'var(--t2)', fontSize:13, display:'flex', alignItems:'center', justifyContent:'center' }}>↺</button>
             <div style={{ flex:1, textAlign:'center', fontSize:28, fontWeight:800, fontFamily:'monospace', fontVariantNumeric:'tabular-nums', color:timerColor }}>
               {formatTime(timer.secs)}
             </div>
@@ -281,7 +281,7 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
                   const ctags = CARDS.filter(cd => (pp.cards || {})[cd.id] > 0).map(cd => `${cd.emoji}×${(pp.cards || {})[cd.id]}`).join(' ')
                   return (
                     <button key={pp.id} onClick={() => onOpenScout(pp.id)}
-                      style={{ width:'100%', padding:'9px 10px', background:'transparent', borderTop:'1px solid rgba(0,0,0,.06)', display:'flex', alignItems:'center', gap:7, textAlign:'left' }}>
+                      style={{ width:'100%', padding:'9px 10px', background:'transparent', borderTop:'1px solid var(--divider)', display:'flex', alignItems:'center', gap:7, textAlign:'left' }}>
                       <Avatar name={pp.name} index={players.indexOf(pp)} size={30} fontSize={11} photo={pp.photo} />
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontSize:13, fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{pp.name}</div>
@@ -324,7 +324,7 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
             const cB = TEAM_CFG[g.b % TEAM_CFG.length]
             const isAct = activeMatch === i
             return (
-              <div key={i} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 13px', borderBottom: i < schedule.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 13px', borderBottom: i < schedule.length - 1 ? '1px solid var(--divider)' : 'none' }}>
                 <div style={{ flex:1, fontSize:12 }}>
                   {g.done && <span style={{ fontSize:10, background:'#e8eef8', color:'var(--navy)', borderRadius:6, padding:'1px 6px', fontWeight:700, marginRight:4 }}>Enc.</span>}
                   <b style={{ color:'var(--t2)' }}>Jogo {i + 1}: </b>
@@ -338,7 +338,7 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
                     <button onClick={() => {
                       const ns = schedule.map((s, si) => si === i ? { ...s, a: s.b, b: s.a } : s)
                       update({ schedule: ns })
-                    }} style={{ background:'#f0ede8', border:'1px solid #ddd', color:'#444', borderRadius:7, fontSize:11, fontWeight:700, padding:'5px 9px' }}>⇄</button>
+                    }} style={{ background:'var(--sur3)', border:'1px solid var(--brd)', color:'var(--t2)', borderRadius:7, fontSize:11, fontWeight:700, padding:'5px 9px' }}>⇄</button>
                   )}
                   <button onClick={() => setMatch(i)}
                     style={{ background: isAct ? 'var(--green)' : g.done ? '#888' : 'var(--navy)', color:'#fff', borderRadius:8, fontSize:12, fontWeight:700, padding:'6px 12px' }}>
@@ -368,7 +368,7 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
           </div>
           <div style={cardStyle()}>
             {matchHistory.map((m, i) => (
-              <div key={i} style={{ padding:'10px 13px', borderBottom: i < matchHistory.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
+              <div key={i} style={{ padding:'10px 13px', borderBottom: i < matchHistory.length - 1 ? '1px solid var(--divider)' : 'none' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <div style={{ fontSize:12, fontWeight:700, color:'var(--t2)' }}>Jogo {i + 1}</div>
                   <div style={{ flex:1, fontSize:13 }}><b>{m.nmA}</b> <span style={{ color:'var(--t3)' }}>vs</span> <b>{m.nmB}</b></div>
@@ -397,14 +397,14 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
         <div style={{ padding:'14px 44px 10px 16px', fontSize:15, fontWeight:800, borderBottom:'1px solid var(--brd)', position:'relative' }}>
           Substituir: {players.find(p => p.id === subPid)?.name}
           <button onClick={() => { setSubPid(null); setSubTidx(-1) }}
-            style={{ position:'absolute', top:10, right:12, width:30, height:30, borderRadius:'50%', background:'#f0ede8', color:'#888', fontSize:16, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+            style={{ position:'absolute', top:10, right:12, width:30, height:30, borderRadius:'50%', background:'var(--sur3)', color:'var(--t3)', fontSize:16, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
         </div>
         {cands.length === 0
           ? <div style={{ padding:16, textAlign:'center', color:'var(--t3)', fontSize:13 }}>Nenhum disponível</div>
           : cands.map(c => {
               return (
                 <button key={c.id} onClick={() => doSub(c.id)}
-                  style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 14px', borderBottom:'1px solid rgba(0,0,0,.05)', background:'transparent', textAlign:'left' }}>
+                  style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 14px', borderBottom:'1px solid var(--divider)', background:'transparent', textAlign:'left' }}>
                   <Avatar name={c.name} index={players.indexOf(c)} size={36} fontSize={12} photo={c.photo} />
                   <div>
                     <div style={{ fontSize:14, fontWeight:700 }}>{c.name}</div>

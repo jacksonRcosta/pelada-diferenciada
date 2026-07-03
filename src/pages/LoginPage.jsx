@@ -1,44 +1,62 @@
 import { useAuth } from '../context/AuthContext'
-import LOGO from '../lib/logo'
+import ThemeToggle from '../components/ThemeToggle'
+import EMBLEM from '../assets/emblem-peladeiros.png'
 
 export default function LoginPage() {
   const { signInWithGoogle } = useAuth()
 
   return (
     <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(160deg,var(--navy),var(--navy2))',
+      minHeight: '100vh', position: 'relative',
+      background: 'radial-gradient(120% 90% at 50% 0%, var(--navy) 0%, var(--navy2) 60%, #081a35 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '24px', gap: 8,
+      padding: '32px 24px', overflow: 'hidden',
     }}>
-      <img src={LOGO} alt="Peladeiros" style={{
-        width: 116, height: 116, borderRadius: '50%', objectFit: 'cover',
-        border: '3px solid rgba(255,255,255,.35)', boxShadow: '0 10px 30px rgba(0,0,0,.35)',
+      {/* Alternador de tema no canto */}
+      <div style={{ position: 'absolute', top: 16, right: 16 }}>
+        <ThemeToggle variant="light" size={38} />
+      </div>
+
+      {/* Brilho sutil ao fundo, atrás do emblema */}
+      <div aria-hidden style={{
+        position: 'absolute', top: '18%', width: 380, height: 380, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(201,168,76,.18) 0%, transparent 70%)',
+        pointerEvents: 'none',
       }} />
 
-      <h1 style={{
-        color: '#fff', fontSize: 'clamp(30px, 8.5vw, 42px)', fontWeight: 900,
-        lineHeight: 1.05, letterSpacing: '.3px', textAlign: 'center',
-        margin: '18px 0 2px', maxWidth: 320, textShadow: '0 2px 12px rgba(0,0,0,.3)',
-      }}>Peladeiros<br />Diferenciados</h1>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 360 }}>
+        <img src={EMBLEM} alt="Peladeiros Diferenciados" style={{
+          width: 'clamp(160px, 52vw, 220px)', height: 'auto', objectFit: 'contain',
+          filter: 'drop-shadow(0 12px 34px rgba(0,0,0,.45))',
+        }} />
 
-      <p style={{ color: 'rgba(255,255,255,.7)', fontSize: 14, margin: 0, textAlign: 'center' }}>
-        Gerencie suas peladas, scouts e rankings
-      </p>
+        <h1 style={{
+          textAlign: 'center', margin: '20px 0 0', lineHeight: 1.02,
+          fontSize: 'clamp(30px, 8.5vw, 44px)', fontWeight: 900, letterSpacing: '.5px',
+          textShadow: '0 2px 14px rgba(0,0,0,.35)',
+        }}>
+          <span style={{ color: '#fff', display: 'block' }}>PELADEIROS</span>
+          <span style={{ color: 'var(--gold)', display: 'block' }}>DIFERENCIADOS</span>
+        </h1>
 
-      <button onClick={signInWithGoogle} style={{
-        marginTop: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-        background: '#fff', color: '#1f2937', border: 'none', borderRadius: 14,
-        padding: '14px 22px', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-        width: '100%', maxWidth: 340, boxShadow: '0 8px 24px rgba(0,0,0,.25)',
-      }}>
-        <GoogleIcon />
-        Entrar com Google
-      </button>
+        <p style={{ color: 'rgba(255,255,255,.72)', fontSize: 14, margin: '14px 0 0', textAlign: 'center' }}>
+          Gerencie suas peladas, scouts e rankings
+        </p>
 
-      <p style={{ color: 'rgba(255,255,255,.5)', fontSize: 11, marginTop: 22, textAlign: 'center', maxWidth: 320 }}>
-        Ao entrar, você cria sua conta de administrador e pode gerenciar quantas peladas quiser.
-      </p>
+        <button onClick={signInWithGoogle} style={{
+          marginTop: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+          background: '#fff', color: '#1f2937', border: 'none', borderRadius: 14,
+          padding: '14px 22px', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+          width: '100%', boxShadow: '0 8px 24px rgba(0,0,0,.3)',
+        }}>
+          <GoogleIcon />
+          Entrar com Google
+        </button>
+
+        <p style={{ color: 'rgba(255,255,255,.5)', fontSize: 11, marginTop: 22, textAlign: 'center' }}>
+          Ao entrar, você cria sua conta de administrador e pode gerenciar quantas peladas quiser.
+        </p>
+      </div>
     </div>
   )
 }

@@ -108,4 +108,4 @@ export default function PeladasPage({ onSelect, onLogout }) {
   )
 }
 
-const iconBtn = { background: '#f0ede8', border: '1px solid var(--brd)', borderRadius: 8, width: 34, height: 34, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+const iconBtn = { background: 'var(--sur3)', border: '1px solid var(--brd)', borderRadius: 8, width: 34, height: 34, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }

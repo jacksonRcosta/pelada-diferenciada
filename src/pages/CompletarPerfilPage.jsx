@@ -28,7 +28,7 @@ export default function CompletarPerfilPage() {
       minHeight: '100vh', background: 'linear-gradient(160deg,var(--navy),var(--navy2))',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
     }}>
-      <div style={{ background: '#fff', borderRadius: 18, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 12px 40px rgba(0,0,0,.3)' }}>
+      <div style={{ background: 'var(--sur)', borderRadius: 18, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 12px 40px var(--shadow)' }}>
         <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>Complete seu cadastro</h2>
         <p style={{ margin: '0 0 18px', fontSize: 13, color: 'var(--t3)' }}>Precisamos de mais alguns dados para criar sua conta de administrador.</p>
 
@@ -36,7 +36,7 @@ export default function CompletarPerfilPage() {
         <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Seu nome completo" style={inputStyle} />
 
         <label style={labelStyle}>E-mail</label>
-        <input value={user?.email || ''} disabled style={{ ...inputStyle, background: '#f0ede8', color: 'var(--t3)' }} />
+        <input value={user?.email || ''} disabled style={{ ...inputStyle, background: 'var(--sur3)', color: 'var(--t3)' }} />
 
         <label style={labelStyle}>Telefone / WhatsApp</label>
         <input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(00) 00000-0000" style={inputStyle} />

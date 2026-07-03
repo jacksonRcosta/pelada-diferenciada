@@ -108,7 +108,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
             {teamRanking.map((d, i) => {
               const tc = TEAM_CFG[d.ti % TEAM_CFG.length]
               return (
-                <div key={d.ti} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderBottom: i < teamRanking.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none' }}>
+                <div key={d.ti} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderBottom: i < teamRanking.length - 1 ? '1px solid var(--divider)' : 'none' }}>
                   <span style={{ fontSize: 16, fontWeight: 800, color: medalColors[medals[i]] || '#ccc', width: 22, textAlign: 'center' }}>
                     {i + 1}
                   </span>
@@ -144,7 +144,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
             ))
           ]
           return (
-            <div key={p.id} onClick={() => onOpenScout(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderBottom: i < sorted.length - 1 ? '1px solid rgba(0,0,0,.05)' : 'none', cursor: 'pointer' }}>
+            <div key={p.id} onClick={() => onOpenScout(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderBottom: i < sorted.length - 1 ? '1px solid var(--divider)' : 'none', cursor: 'pointer' }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: medalColors[medals[i]] || '#ccc', width: 22, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
               <Avatar name={p.name} index={oi} size={34} fontSize={11} photo={p.photo} />
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -164,7 +164,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
         })}
       </div>
 
-      <div style={{ background: '#eef3fb', border: '1px solid #cdd9ee', borderRadius: 12, padding: '11px 13px', marginBottom: 10, fontSize: 12.5, color: 'var(--navy)', lineHeight: 1.5 }}>
+      <div style={{ background: 'var(--info-bg)', border: '1px solid var(--info-brd)', borderRadius: 12, padding: '11px 13px', marginBottom: 10, fontSize: 12.5, color: 'var(--navy)', lineHeight: 1.5 }}>
         🏟 Prêmios, melhores por posição, <b>destaques das rodadas</b> e a <b>Seleção estilo FIFA</b> agora estão na aba <b>Destaques</b>.
       </div>
 
@@ -258,7 +258,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
       )}
 
       {!viewOnly && (
-        <button onClick={endSeason} style={{ width: '100%', padding: 13, borderRadius: 10, marginTop: 6, background: ended ? '#BA7517' : 'transparent', border: ended ? '1.5px solid #BA7517' : '1.5px solid #ddd', color: ended ? '#fff' : '#aaa', fontSize: 14, fontWeight: ended ? 700 : 600 }}>
+        <button onClick={endSeason} style={{ width: '100%', padding: 13, borderRadius: 10, marginTop: 6, background: ended ? '#BA7517' : 'transparent', border: ended ? '1.5px solid #BA7517' : '1.5px solid var(--brd)', color: ended ? '#fff' : 'var(--t3)', fontSize: 14, fontWeight: ended ? 700 : 600 }}>
           🏆 Encerrar temporada (arquivar e zerar scouts)
         </button>
       )}

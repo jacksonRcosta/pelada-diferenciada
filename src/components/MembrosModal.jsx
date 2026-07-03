@@ -61,7 +61,7 @@ export default function MembrosModal({ open, onClose, peladaId, peladaNome, meuI
     <Modal open={open} onClose={onClose}>
       <div style={{ padding: '14px 44px 10px 16px', fontSize: 16, fontWeight: 800, borderBottom: '1px solid var(--brd)', position: 'relative' }}>
         Membros da pelada
-        <button onClick={onClose} style={{ position: 'absolute', top: 10, right: 12, width: 30, height: 30, borderRadius: '50%', background: '#f0ede8', color: '#888', fontSize: 16, fontWeight: 700 }}>✕</button>
+        <button onClick={onClose} style={{ position: 'absolute', top: 10, right: 12, width: 30, height: 30, borderRadius: '50%', background: 'var(--sur3)', color: 'var(--t3)', fontSize: 16, fontWeight: 700 }}>✕</button>
       </div>
 
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '70vh', overflowY: 'auto' }}>
@@ -75,7 +75,7 @@ export default function MembrosModal({ open, onClose, peladaId, peladaNome, meuI
               ✏️ Convidar como <b>Editor</b> (marca scouts)
             </button>
             <button onClick={() => links && copiar(links.viewer, 'visualizador')} disabled={!links}
-              style={linkBtn('#f0ede8', 'var(--txt)', '1px solid var(--brd)')}>
+              style={linkBtn('var(--sur3)', 'var(--txt)', '1px solid var(--brd)')}>
               👁 Convidar como <b>Visualizador</b> (só acompanha)
             </button>
           </div>

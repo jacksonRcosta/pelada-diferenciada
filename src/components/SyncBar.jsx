@@ -32,7 +32,7 @@ export default function SyncBar({ status }) {
       {status === 'syncing' && (
         <div style={{
           position: 'fixed', bottom: 70, right: 14, zIndex: 98,
-          background: '#1a1a18', color: '#f4f2ed',
+          background: 'var(--toast-bg)', color: 'var(--toast-txt)',
           fontSize: 12, fontWeight: 600, padding: '6px 12px',
           borderRadius: 8, opacity: .85
         }}>

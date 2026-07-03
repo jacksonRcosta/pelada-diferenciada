@@ -104,8 +104,8 @@ export default function JogadoresPage({ state, update, viewOnly }) {
 
   const inputStyle = {
     width: '100%', padding: '12px 13px', fontSize: 16,
-    border: '1.5px solid #e0ddd6', borderRadius: 10,
-    background: '#f9f8f5', color: 'var(--txt)', marginBottom: 10
+    border: '1.5px solid var(--brd)', borderRadius: 10,
+    background: 'var(--sur2)', color: 'var(--txt)', marginBottom: 10
   }
   const labelStyle = {
     display: 'block', fontSize: 10, fontWeight: 800,
@@ -126,7 +126,7 @@ export default function JogadoresPage({ state, update, viewOnly }) {
               <label style={{ cursor: 'pointer', flexShrink: 0 }}>
                 {photo
                   ? <img src={photo} alt="prévia" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--navy)' }} />
-                  : <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f0ede8', border: '2px dashed #cfcabf', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: '#aaa' }}>📷</div>}
+                  : <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--sur3)', border: '2px dashed var(--brd)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: 'var(--t3)' }}>📷</div>}
                 <input type="file" accept="image/*" onChange={e => readPhoto(e.target.files[0], setPhoto)} style={{ display: 'none' }} />
               </label>
               <div style={{ fontSize: 12, color: 'var(--t3)' }}>
@@ -233,14 +233,14 @@ export default function JogadoresPage({ state, update, viewOnly }) {
       })}
 
       <Modal open={!!editPid} onClose={() => setEditPid(null)}>
-        <div style={{ padding: '13px 16px 12px', borderBottom: '1px solid rgba(0,0,0,.07)', position: 'relative' }}>
+        <div style={{ padding: '13px 16px 12px', borderBottom: '1px solid var(--divider)', position: 'relative' }}>
           <div style={{ fontSize: 17, fontWeight: 800 }}>
             {players.find(p => p.id === editPid)?.name}
           </div>
           <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 3 }}>Alterar posição</div>
           <button
             onClick={() => setEditPid(null)}
-            style={{ position: 'absolute', top: 11, right: 12, width: 30, height: 30, borderRadius: '50%', background: '#f0ede8', color: '#888', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ position: 'absolute', top: 11, right: 12, width: 30, height: 30, borderRadius: '50%', background: 'var(--sur3)', color: 'var(--t3)', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >✕</button>
         </div>
         <div style={{ padding: 14 }}>

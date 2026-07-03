@@ -37,7 +37,7 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
   return (
     <Modal open={open} onClose={onClose}>
       {/* HEAD */}
-      <div style={{ display:'flex', alignItems:'center', gap:11, padding:'13px 16px 12px', borderBottom:'1px solid rgba(0,0,0,.07)', position:'relative' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:11, padding:'13px 16px 12px', borderBottom:'1px solid var(--divider)', position:'relative' }}>
         <Avatar name={p.name} index={idx} size={48} fontSize={16} photo={p.photo} />
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:17, fontWeight:800 }}>{p.name}</div>
@@ -50,11 +50,11 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
           <div style={{ fontSize:15, fontWeight:700, padding:'4px 12px', borderRadius:16, ...ptStyle(pt) }}>{ptsLabel(pt)} pts</div>
           <span style={{ fontSize:10, color:'var(--t3)' }}>partida · temp. {ptsLabel(ptTotal)}</span>
         </div>
-        <button onClick={onClose} style={{ position:'absolute', top:11, right:12, width:30, height:30, borderRadius:'50%', background:'#f0ede8', color:'#888', fontSize:16, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+        <button onClick={onClose} style={{ position:'absolute', top:11, right:12, width:30, height:30, borderRadius:'50%', background:'var(--sur3)', color:'var(--t3)', fontSize:16, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
       </div>
 
       {/* SCOUTS */}
-      <div style={{ fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'var(--t3)', padding:'10px 14px 4px', background:'#f9f8f5', borderTop:'1px solid rgba(0,0,0,.06)', borderBottom:'1px solid rgba(0,0,0,.06)' }}>
+      <div style={{ fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'var(--t3)', padding:'10px 14px 4px', background:'var(--sur2)', borderTop:'1px solid var(--divider)', borderBottom:'1px solid var(--divider)' }}>
         Scouts da partida (contabilizam ao finalizar)
       </div>
       <div style={{ padding:'6px 14px' }}>
@@ -62,7 +62,7 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
           const cnt = p.sc[s.id] || 0
           const tot = (p.scTotal || {})[s.id] || 0   // acumulado da temporada (partidas já finalizadas)
           return (
-            <div key={s.id} style={{ display:'flex', alignItems:'center', gap:9, padding:'11px 0', borderBottom:'1px solid rgba(0,0,0,.06)' }}>
+            <div key={s.id} style={{ display:'flex', alignItems:'center', gap:9, padding:'11px 0', borderBottom:'1px solid var(--divider)' }}>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:15, fontWeight:700 }}>{s.name}</div>
                 <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3, flexWrap:'wrap' }}>
@@ -78,7 +78,7 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                 {cnt > 0 && <button onClick={() => chgScout(s.id, -cnt)} style={{ width:40, height:40, borderRadius:10, background:'#fce8e8', color:'var(--red)', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>}
-                {cnt > 0 && <button onClick={() => chgScout(s.id, -1)}  style={{ width:40, height:40, borderRadius:10, background:'#f0f0ec', color:'#555', fontSize:22, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}>−</button>}
+                {cnt > 0 && <button onClick={() => chgScout(s.id, -1)}  style={{ width:40, height:40, borderRadius:10, background:'var(--sur3)', color:'var(--t2)', fontSize:22, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}>−</button>}
                 <span style={{ fontSize:20, fontWeight:800, minWidth:26, textAlign:'center', color:cnt > 0 ? s.c.fg : '#ccc' }}>{cnt}</span>
                 <button onClick={() => chgScout(s.id, 1)} style={{ width:40, height:40, borderRadius:10, background:s.c.bg, color:s.c.fg, fontSize:22, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}>+</button>
               </div>
@@ -88,7 +88,7 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
       </div>
 
       {/* CARTÕES */}
-      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px 4px', background:'#f9f8f5', borderTop:'1px solid rgba(0,0,0,.06)', borderBottom:'1px solid rgba(0,0,0,.06)' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px 4px', background:'var(--sur2)', borderTop:'1px solid var(--divider)', borderBottom:'1px solid var(--divider)' }}>
         <span style={{ flex:1, fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'var(--t3)' }}>Cartões (só marcação)</span>
         {totalCards(p.cardsTotal) > 0 && (
           <span style={{ fontSize:10.5, fontWeight:700, color:'var(--t3)' }}>total temporada: {totalCards(p.cardsTotal)}</span>
@@ -106,7 +106,7 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
               {tot > 0 && <div style={{ fontSize:10, fontWeight:700, color:cd.color, opacity:.75 }}>temp.: {tot}</div>}
               <div style={{ display:'flex', gap:4 }}>
                 {cnt > 0 && <button onClick={() => chgCard(cd.id, -cnt)} style={{ width:30, height:30, borderRadius:8, background:'#fce8e8', color:'#a32d2d', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>}
-                {cnt > 0 && <button onClick={() => chgCard(cd.id, -1)}  style={{ width:30, height:30, borderRadius:8, background:'#f0f0ec', color:'#555', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>−</button>}
+                {cnt > 0 && <button onClick={() => chgCard(cd.id, -1)}  style={{ width:30, height:30, borderRadius:8, background:'var(--sur3)', color:'var(--t2)', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>−</button>}
                 <button onClick={() => chgCard(cd.id, 1)} style={{ width:30, height:30, borderRadius:8, background:cd.bg, color:cd.color, border:`1.5px solid ${cd.color}`, fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>+</button>
               </div>
             </div>
