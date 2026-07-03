@@ -17,9 +17,10 @@ export default function LoginPage() {
       }} />
 
       <h1 style={{
-        color: '#fff', fontSize: 40, fontWeight: 900, letterSpacing: '.5px',
-        margin: '18px 0 2px', textShadow: '0 2px 12px rgba(0,0,0,.3)',
-      }}>Peladeiros Diferenciados</h1>
+        color: '#fff', fontSize: 'clamp(30px, 8.5vw, 42px)', fontWeight: 900,
+        lineHeight: 1.05, letterSpacing: '.3px', textAlign: 'center',
+        margin: '18px 0 2px', maxWidth: 320, textShadow: '0 2px 12px rgba(0,0,0,.3)',
+      }}>Peladeiros<br />Diferenciados</h1>
 
       <p style={{ color: 'rgba(255,255,255,.7)', fontSize: 14, margin: 0, textAlign: 'center' }}>
         Gerencie suas peladas, scouts e rankings
