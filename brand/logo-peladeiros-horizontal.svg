@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 150" width="560" height="150">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4dc93"></stop><stop offset="1" stop-color="#c69a3d"></stop></linearGradient>
+    <linearGradient id="goldH" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f4dc93"></stop><stop offset="1" stop-color="#c69a3d"></stop></linearGradient>
+    
+  </defs>
+  <g transform="translate(9,9)">
+    <circle cx="66" cy="66" r="64" fill="none" stroke="url(#gold)" stroke-width="2"></circle>
+    <circle cx="66" cy="66" r="55" fill="none" stroke="#f0d78a" stroke-opacity="0.4" stroke-width="1"></circle>
+    <g transform="translate(34,34) scale(0.64)"><circle cx="50" cy="50" r="42" fill="#fff"></circle><polygon points="50,30 65,41 59,59 41,59 35,41" fill="#0c224c"></polygon><g stroke="#0c224c" stroke-width="3" stroke-linecap="round"><line x1="50" y1="30" x2="50" y2="12"></line><line x1="65" y1="41" x2="80" y2="33"></line><line x1="59" y1="59" x2="70" y2="74"></line><line x1="41" y1="59" x2="30" y2="74"></line><line x1="35" y1="41" x2="20" y2="33"></line></g></g>
+  </g>
+  <text class="pw" x="170" y="66" fill="#ffffff">PELADEIROS</text>
+  <text class="pw" x="170" y="118" fill="url(#goldH)">DIFERENCIADOS</text>
+</svg>
