@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { supabase, SITE_URL } from '../lib/supabaseClient'
 
 const AuthContext = createContext(null)
 
@@ -67,10 +67,9 @@ export function AuthProvider({ children }) {
   }, [loadProfile])
 
   const signInWithGoogle = useCallback(async () => {
-    const redirectTo = window.location.origin + window.location.pathname
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: { redirectTo: SITE_URL },
     })
     if (error) console.error('signInWithGoogle:', error.message)
   }, [])

@@ -13,5 +13,10 @@ export const supabase = createClient(SUPABASE_URL, ANON_KEY, {
   },
 })
 
+// URL de retorno do OAuth. Determinística: em produção volta sempre para o
+// site publicado, independentemente de onde o login foi iniciado. Para testar
+// local, defina REACT_APP_SITE_URL=http://localhost:3000.
+export const SITE_URL = process.env.REACT_APP_SITE_URL || 'https://peladadiferenciada.netlify.app'
+
 // E-mail da conta "raiz" que herda a pelada existente (migração do pd_state=main).
 export const ROOT_EMAIL = 'jackson.computacao@gmail.com'

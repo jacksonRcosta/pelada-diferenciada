@@ -57,6 +57,24 @@ create trigger trg_add_owner_member
   after insert on public.peladas
   for each row execute function public.add_owner_as_member();
 
+-- TRIGGER: cria o perfil automaticamente para todo novo usuário do Auth
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer as $$
+begin
+  insert into public.profiles (id, email, nome_completo)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', '')
+  )
+  on conflict (id) do nothing;
+  return new;
+end $$;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
 -- Helper: usuário é membro da pelada? (security definer evita recursão de RLS)
 create or replace function public.is_member(p_pelada uuid)
 returns boolean language sql security definer stable as $$
