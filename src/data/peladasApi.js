@@ -8,7 +8,7 @@ export async function listMinhasPeladas() {
 
   const { data, error } = await supabase
     .from('peladas')
-    .select('id, nome, owner_id, created_at, updated_at')
+    .select('id, nome, cidade, estado, owner_id, created_at, updated_at')
     .order('created_at', { ascending: false })
   if (error) throw error
 
@@ -24,14 +24,18 @@ export async function listMinhasPeladas() {
   }))
 }
 
-export async function criarPelada(nome) {
+export async function criarPelada(nome, cidade = '', estado = '') {
   const { data: userData } = await supabase.auth.getUser()
   const uid = userData?.user?.id
   if (!uid) throw new Error('Sessão inválida')
 
   const { data, error } = await supabase
     .from('peladas')
-    .insert({ nome: nome.trim(), owner_id: uid })
+    .insert({
+      nome: nome.trim(), owner_id: uid,
+      cidade: cidade.trim() || null,
+      estado: estado.trim() || null,
+    })
     .select()
     .single()
   if (error) throw error
@@ -44,12 +48,19 @@ export async function criarPelada(nome) {
   return data
 }
 
-export async function renomearPelada(id, nome) {
-  const { error } = await supabase
-    .from('peladas')
-    .update({ nome: nome.trim(), updated_at: new Date().toISOString() })
-    .eq('id', id)
+// Atualiza dados cadastrais da pelada (nome / cidade / estado).
+export async function atualizarPelada(id, { nome, cidade, estado }) {
+  const campos = { updated_at: new Date().toISOString() }
+  if (nome !== undefined)   campos.nome   = nome.trim()
+  if (cidade !== undefined) campos.cidade = (cidade || '').trim() || null
+  if (estado !== undefined) campos.estado = (estado || '').trim() || null
+  const { error } = await supabase.from('peladas').update(campos).eq('id', id)
   if (error) throw error
+}
+
+// Mantida por compatibilidade (renomear rápido).
+export async function renomearPelada(id, nome) {
+  return atualizarPelada(id, { nome })
 }
 
 export async function excluirPelada(id) {
@@ -112,4 +123,40 @@ export async function joinByToken(token) {
   const { data, error } = await supabase.rpc('join_pelada_by_token', { p_token: token })
   if (error) throw error
   return Array.isArray(data) ? data[0] : data
+}
+
+// ---------- Busca de peladas + solicitações de entrada ----------
+
+// Procura peladas por nome/cidade/UF. Termo vazio lista as mais recentes.
+// Cada item traz: { id, nome, cidade, estado, owner_nome, membros, ja_membro, solicitacao }.
+export async function buscarPeladas(termo = '') {
+  const { data, error } = await supabase.rpc('search_peladas', { p_termo: termo })
+  if (error) throw error
+  return data || []
+}
+
+// Solicita entrada numa pelada. Retorna 'OK' | 'JA_MEMBRO' | 'JA_SOLICITADO'.
+export async function solicitarEntrada(peladaId, mensagem = '') {
+  const { data, error } = await supabase.rpc('request_join_pelada', {
+    p_pelada: peladaId, p_msg: mensagem,
+  })
+  if (error) throw error
+  return data
+}
+
+// Lista solicitações pendentes recebidas pelo dono (todas as suas peladas).
+export async function listarSolicitacoesRecebidas() {
+  const { data, error } = await supabase.rpc('list_owner_pending_requests')
+  if (error) throw error
+  return data || []
+}
+
+// Responde uma solicitação: aprovar (vira membro) ou recusar.
+// Retorna 'APROVADO' | 'RECUSADO'.
+export async function responderSolicitacao(requestId, aprovar, role = 'editor') {
+  const { data, error } = await supabase.rpc('respond_join_request', {
+    p_request: requestId, p_aprovar: aprovar, p_role: role,
+  })
+  if (error) throw error
+  return data
 }
