@@ -27,9 +27,21 @@ export const AV_COLS = [
   ['#FAECE7','#712B13'],['#FCEBEB','#791F1F'],
 ]
 
+// Estrutura padrão do módulo financeiro (mensalistas × diaristas).
+// mensalidade/diaria: valores globais da pelada.
+// cfg[pid]: { tipo: 'mensalista'|'diarista', diaVenc: 1..31 } — valor herda do global.
+// mensal['AAAA-MM'][pid]: { pago, pagoEm } — controle mensal dos mensalistas.
+// diarias: [{ id, pid, nome, data:'AAAA-MM-DD', valor, pago, pagoEm }] — avulsas do dia.
+export const INITIAL_FINANCE = {
+  mensalidade: 0, diaria: 0,
+  cfg: {}, mensal: {}, diarias: [],
+}
+
 export const INITIAL_STATE = {
   players: [], nextId: 1, teams: null, schedule: [],
   activeMatch: -1, matchA: -1, matchB: -1,
   scoreA: 0, scoreB: 0, matchFinished: false, matchHistory: [],
   roundHistory: [], seasonHistory: [],
+  roundStartedAt: null,
+  finance: INITIAL_FINANCE,
 }

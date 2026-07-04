@@ -36,6 +36,8 @@ export async function saveState(peladaId, obj) {
     matchHistory: obj.matchHistory || [],
     roundHistory: Array.isArray(obj.roundHistory) ? obj.roundHistory : [],
     seasonHistory: Array.isArray(obj.seasonHistory) ? obj.seasonHistory : [],
+    roundStartedAt: obj.roundStartedAt || null,
+    finance: obj.finance || { mensalidade: 0, diaria: 0, cfg: {}, mensal: {}, diarias: [] },
   }
 
   const { error } = await supabase

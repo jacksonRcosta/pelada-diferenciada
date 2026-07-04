@@ -4,7 +4,9 @@ import SyncBar from '../components/SyncBar'
 import Toast from '../components/Toast'
 import ScoutModal from '../components/ScoutModal'
 import MembrosModal from '../components/MembrosModal'
+import FinanceiroModal from '../components/FinanceiroModal'
 import ThemeToggle from '../components/ThemeToggle'
+import { scoutsLocked } from '../lib/utils'
 import PartidaPage from './PartidaPage'
 import ScoutsPage from './ScoutsPage'
 import TimesPage from './TimesPage'
@@ -26,11 +28,17 @@ const TABS = [
 export default function GameShell({ peladaId, peladaNome, role = 'owner', meuId, onTrocarPelada, onLogout }) {
   const isViewer = role === 'viewer'
   const isOwner = role === 'owner'
+  const canFinance = isOwner || role === 'editor'
   const { state, update, syncStatus } = useGameState(peladaId, isViewer)
   const [tab, setTab] = useState('partida')
   const [scoutPid, setScoutPid] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [membrosOpen, setMembrosOpen] = useState(false)
+  const [financeiroOpen, setFinanceiroOpen] = useState(false)
+
+  // Prazo de ajuste de scouts: expira às 12:00 do dia seguinte ao início da
+  // rodada. O proprietário mantém a permissão de editar (override).
+  const scoutLock = !isOwner && scoutsLocked(state.roundStartedAt)
 
   const syncLabel = {
     syncing: '⟳ sincronizando...',
@@ -101,6 +109,12 @@ export default function GameShell({ peladaId, peladaNome, role = 'owner', meuId,
                   👥 Membros / convidar
                 </button>
               )}
+              {canFinance && (
+                <button onClick={() => { setMenuOpen(false); setFinanceiroOpen(true) }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer', borderBottom: '1px solid var(--brd)' }}>
+                  💰 Financeiro
+                </button>
+              )}
               <button onClick={() => { setMenuOpen(false); onTrocarPelada && onTrocarPelada() }}
                 style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer', borderBottom: '1px solid var(--brd)' }}>
                 🔄 Trocar de pelada
@@ -117,8 +131,9 @@ export default function GameShell({ peladaId, peladaNome, role = 'owner', meuId,
       <div style={{ display: 'flex', background: 'var(--sur)', borderBottom: '2px solid var(--brd)', position: 'sticky', top: 0, zIndex: 50 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
-            flex: 1, padding: '11px 2px 10px', border: 'none', background: 'transparent',
-            fontSize: 10, fontWeight: 700, letterSpacing: '.3px', textTransform: 'uppercase',
+            flex: '1 1 0', minWidth: 0, padding: '11px 4px 10px', border: 'none', background: 'transparent',
+            fontSize: 10.5, fontWeight: 700, letterSpacing: '.2px', textTransform: 'uppercase',
+            textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             color: tab === t.id ? 'var(--navy)' : 'var(--t3)',
             borderBottom: tab === t.id ? '3px solid var(--navy)' : '3px solid transparent',
             marginBottom: -2, cursor: 'pointer',
@@ -144,6 +159,7 @@ export default function GameShell({ peladaId, peladaNome, role = 'owner', meuId,
         onScoutChange={handleScoutChange}
         onCardChange={handleCardChange}
         viewOnly={isViewer}
+        locked={scoutLock}
       />
 
       <MembrosModal
@@ -152,6 +168,13 @@ export default function GameShell({ peladaId, peladaNome, role = 'owner', meuId,
         peladaId={peladaId}
         peladaNome={peladaNome}
         meuId={meuId}
+      />
+
+      <FinanceiroModal
+        open={financeiroOpen}
+        onClose={() => setFinanceiroOpen(false)}
+        state={state}
+        update={update}
       />
 
       <Toast />

@@ -15,6 +15,12 @@ export default function ScoutsPage({ state, onOpenScout }) {
       const pls = tm.pids.map(id => players.find(p => p.id === id)).filter(Boolean)
       pls.forEach(p => rendered.add(p.id))
       groups.push({ label: tm.name, pls, tc, tp: pls.reduce((s, p) => s + calcPoints(p.scTotal), 0) })
+      // Reservas: jogadores substituídos nesta rodada seguem marcáveis.
+      const bench = (tm.bench || []).map(id => players.find(p => p.id === id)).filter(Boolean).filter(p => !rendered.has(p.id))
+      if (bench.length) {
+        bench.forEach(p => rendered.add(p.id))
+        groups.push({ label: `${tm.name} · Reservas`, pls: bench, tc, tp: 0, reserva: true })
+      }
     })
     const un = players.filter(p => !rendered.has(p.id))
     if (un.length) groups.push({ label: 'Sem Time', pls: un, tc: null, tp: 0 })
@@ -27,10 +33,16 @@ export default function ScoutsPage({ state, onOpenScout }) {
       {groups.map((g, gi) => (
         <div key={gi}>
           {g.label && (
-            <div style={{ display: 'flex', alignItems: 'center', padding: '10px 13px', borderRadius: 12, marginBottom: 7, background: g.tc ? g.tc.color : '#bbb' }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', flex: 1 }}>{g.label} <span style={{ fontSize: 11, opacity: .7 }}>({g.pls.length})</span></span>
-              {g.tc && <span style={{ fontSize: 13, fontWeight: 700, padding: '3px 10px', borderRadius: 13, background: 'rgba(255,255,255,.25)', color: '#fff' }}>{ptsLabel(g.tp)} pts</span>}
-            </div>
+            g.reserva ? (
+              <div style={{ display: 'flex', alignItems: 'center', padding: '8px 13px', borderRadius: 12, marginBottom: 7, background: 'var(--sur2)', border: `1.5px dashed ${g.tc ? g.tc.color : 'var(--brd)'}` }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: g.tc ? g.tc.color : 'var(--t2)', flex: 1 }}>🔄 {g.label} <span style={{ fontSize: 11, opacity: .7 }}>({g.pls.length})</span></span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', padding: '10px 13px', borderRadius: 12, marginBottom: 7, background: g.tc ? g.tc.color : '#bbb' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', flex: 1 }}>{g.label} <span style={{ fontSize: 11, opacity: .7 }}>({g.pls.length})</span></span>
+                {g.tc && <span style={{ fontSize: 13, fontWeight: 700, padding: '3px 10px', borderRadius: 13, background: 'rgba(255,255,255,.25)', color: '#fff' }}>{ptsLabel(g.tp)} pts</span>}
+              </div>
+            )
           )}
           {g.pls.map(p => <PlayerButton key={p.id} player={p} index={players.indexOf(p)} onClick={() => onOpenScout(p.id)} />)}
         </div>

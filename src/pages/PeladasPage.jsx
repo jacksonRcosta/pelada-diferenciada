@@ -22,6 +22,8 @@ export default function PeladasPage({ onSelect, onLogout }) {
   const [nome, setNome] = useState('')
   const [cidade, setCidade] = useState('')
   const [estado, setEstado] = useState('')
+  const [horario, setHorario] = useState('')
+  const [local, setLocal] = useState('')
   const [busy, setBusy] = useState(false)
 
   // Edição
@@ -29,6 +31,8 @@ export default function PeladasPage({ onSelect, onLogout }) {
   const [eNome, setENome] = useState('')
   const [eCidade, setECidade] = useState('')
   const [eEstado, setEEstado] = useState('')
+  const [eHorario, setEHorario] = useState('')
+  const [eLocal, setELocal] = useState('')
   const [eBusy, setEBusy] = useState(false)
 
   // Busca de peladas
@@ -60,8 +64,8 @@ export default function PeladasPage({ onSelect, onLogout }) {
     if (!nome.trim()) return
     setBusy(true); setErro('')
     try {
-      const p = await criarPelada(nome, cidade, estado)
-      setNome(''); setCidade(''); setEstado(''); setNovaOpen(false)
+      const p = await criarPelada(nome, cidade, estado, horario, local)
+      setNome(''); setCidade(''); setEstado(''); setHorario(''); setLocal(''); setNovaOpen(false)
       await carregar()
       onSelect({ id: p.id, nome: p.nome })
     } catch (e) { setErro('Erro ao criar: ' + e.message) }
@@ -70,13 +74,14 @@ export default function PeladasPage({ onSelect, onLogout }) {
 
   function openEdit(p) {
     setEditP(p); setENome(p.nome || ''); setECidade(p.cidade || ''); setEEstado(p.estado || '')
+    setEHorario(p.horario || ''); setELocal(p.local || '')
   }
 
   async function handleSalvarEdit() {
     if (!eNome.trim()) return
     setEBusy(true); setErro('')
     try {
-      await atualizarPelada(editP.id, { nome: eNome, cidade: eCidade, estado: eEstado })
+      await atualizarPelada(editP.id, { nome: eNome, cidade: eCidade, estado: eEstado, horario: eHorario, local: eLocal })
       setEditP(null)
       await carregar()
     } catch (e) { setErro('Erro ao salvar: ' + e.message) }
@@ -233,6 +238,16 @@ export default function PeladasPage({ onSelect, onLogout }) {
                 </select>
               </div>
             </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <label style={lbl}>Horário</label>
+                <input value={horario} onChange={e => setHorario(e.target.value)} placeholder="Ex: Sáb 08:00" style={inp} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={lbl}>Local</label>
+                <input value={local} onChange={e => setLocal(e.target.value)} placeholder="Ex: Quadra do clube" style={inp} />
+              </div>
+            </div>
             <button onClick={handleCriar} disabled={busy} style={{ width: '100%', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 10, padding: '11px', fontSize: 14, fontWeight: 800, cursor: 'pointer', opacity: busy ? .6 : 1, marginTop: 4 }}>{busy ? 'Criando...' : 'Criar pelada'}</button>
           </div>
         )}
@@ -253,6 +268,11 @@ export default function PeladasPage({ onSelect, onLogout }) {
                     {p.role === 'owner' ? 'Proprietário' : p.role === 'editor' ? 'Editor' : 'Visualizador'}
                     {localLabel(p) ? ` · 📍 ${localLabel(p)}` : ''}
                   </div>
+                  {(p.horario || p.local) && (
+                    <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>
+                      {p.horario ? `🕐 ${p.horario}` : ''}{p.horario && p.local ? ' · ' : ''}{p.local ? `🏟 ${p.local}` : ''}
+                    </div>
+                  )}
                 </button>
                 {p.owner_id === user?.id && (
                   <>
@@ -284,6 +304,16 @@ export default function PeladasPage({ onSelect, onLogout }) {
                 <option value="">UF</option>
                 {UFS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
               </select>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Horário</label>
+              <input value={eHorario} onChange={e => setEHorario(e.target.value)} placeholder="Ex: Sáb 08:00" style={inp} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lbl}>Local</label>
+              <input value={eLocal} onChange={e => setELocal(e.target.value)} placeholder="Ex: Quadra do clube" style={inp} />
             </div>
           </div>
           <button onClick={handleSalvarEdit} disabled={eBusy} style={{ width: '100%', background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 11, padding: '13px', fontSize: 15, fontWeight: 800, cursor: 'pointer', opacity: eBusy ? .6 : 1, marginTop: 6 }}>{eBusy ? 'Salvando...' : 'Salvar'}</button>

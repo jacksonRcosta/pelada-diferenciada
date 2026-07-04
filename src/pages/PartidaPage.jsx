@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { TEAM_CFG, CARDS } from '../lib/constants'
-import { calcPoints, ptStyle, ptsLabel, formatTime, mergeScouts, hasCounts, sortByPosition, buildSchedule, bestPlayer, rankByScout, scoutSummary } from '../lib/utils'
+import { calcPoints, ptStyle, ptsLabel, formatTime, mergeScouts, hasCounts, sortByPosition, buildSchedule, bestPlayer, rankByScout, scoutSummary, ensureFinance, ymdOf } from '../lib/utils'
 import { shareCard } from '../lib/shareCard'
 import { useTimer } from '../hooks/useTimer'
 import Avatar from '../components/Avatar'
@@ -8,7 +8,7 @@ import Modal from '../components/Modal'
 import { showToast } from '../components/Toast'
 
 export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
-  const { players, teams, schedule, activeMatch, matchA, matchB, scoreA, scoreB, matchFinished, matchHistory, roundHistory } = state
+  const { players, teams, schedule, activeMatch, matchA, matchB, scoreA, scoreB, matchFinished, matchHistory, roundHistory, roundStartedAt, finance } = state
   const timer = useTimer(25)
   const [subPid, setSubPid] = useState(null)
   const [subTidx, setSubTidx] = useState(-1)
@@ -48,6 +48,25 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
     else update({ scoreB: Math.max(0, scoreB + delta) })
   }
 
+  // Inicia a rodada: marca o horário de início (base do prazo de ajuste de
+  // scouts) e lança automaticamente as diárias dos diaristas escalados.
+  function startRound() {
+    const startedAt = new Date().toISOString()
+    const dia = ymdOf(startedAt)
+    const f = ensureFinance(finance)
+    const inTeams = new Set((teams || []).flatMap(t => t.pids))
+    const novas = []
+    players.forEach(p => {
+      if (!inTeams.has(p.id)) return
+      if (f.cfg[p.id]?.tipo !== 'diarista') return
+      if (f.diarias.some(d => d.pid === p.id && d.data === dia)) return
+      novas.push({ id: `${p.id}-${dia}`, pid: p.id, nome: p.name, data: dia, valor: f.diaria, pago: false, pagoEm: null })
+    })
+    const newFinance = novas.length ? { ...f, diarias: [...f.diarias, ...novas] } : finance
+    update({ roundStartedAt: startedAt, finance: newFinance })
+    showToast(novas.length ? `▶ Rodada iniciada! ${novas.length} diária(s) lançada(s).` : '▶ Rodada iniciada!')
+  }
+
   function finishMatch() {
     if (!window.confirm(`Finalizar?\n${tmA?.name} ${scoreA} × ${scoreB} ${tmB?.name}`)) return
     timer.pause()
@@ -58,9 +77,13 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
       .filter(p => hasCounts(p.sc) || hasCounts(p.cards))
       .map(p => ({ id: p.id, name: p.name, pos: p.pos, sc: { ...p.sc }, cards: { ...p.cards }, pts: calcPoints(p.sc) }))
     const mvp = bestPlayer(matchScouts)
-    // Presença: todos os jogadores escalados nos dois times deste jogo, mesmo
-    // quem não pontuou. É o que permite contar os jogos disputados por jogador.
-    const partIds = [...new Set([...(tmA?.pids || []), ...(tmB?.pids || [])])]
+    // Presença: todos os jogadores escalados nos dois times deste jogo (mais os
+    // reservas que entraram por substituição), mesmo quem não pontuou. É o que
+    // permite contar os jogos disputados por jogador.
+    const partIds = [...new Set([
+      ...(tmA?.pids || []), ...(tmB?.pids || []),
+      ...(tmA?.bench || []), ...(tmB?.bench || []),
+    ])]
     const entry = {
       nmA: tmA?.name, nmB: tmB?.name, sA: scoreA, sB: scoreB,
       scouts: matchScouts,
@@ -109,7 +132,7 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
       }
     })
     const keptIds = new Set(kept.map(p => p.id))
-    const nt = (teams || []).map(t => ({ ...t, pids: t.pids.filter(id => keptIds.has(id)) }))
+    const nt = (teams || []).map(t => ({ ...t, pids: t.pids.filter(id => keptIds.has(id)), bench: [] }))
     const sched = buildSchedule(nt.length)
 
     // Agrega os scouts de todas as partidas finalizadas na rodada para apurar o
@@ -147,6 +170,7 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
       matchFinished: false,
       matchHistory: [],
       roundHistory: newRoundHistory,
+      roundStartedAt: null,
     })
     timer.reset()
     showToast(roundEntry.mvp
@@ -155,7 +179,13 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
   }
 
   function doSub(newPid) {
-    const nt = teams.map((t, i) => i === subTidx ? { ...t, pids: t.pids.map(id => id === subPid ? newPid : id) } : t)
+    // O substituído sai do time em campo mas vira RESERVA da rodada (bench),
+    // permanecendo marcável para scouts. Se o que entra estava no banco, sai dele.
+    const nt = teams.map((t, i) => {
+      if (i !== subTidx) return t
+      const bench = Array.from(new Set([...(t.bench || []), subPid])).filter(id => id !== newPid)
+      return { ...t, pids: t.pids.map(id => id === subPid ? newPid : id), bench }
+    })
     const op = players.find(p => p.id === subPid)
     const np = players.find(p => p.id === newPid)
     update({ teams: nt })
@@ -196,7 +226,7 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
   }
 
   const cands = subTidx >= 0 && teams[subTidx]
-    ? players.filter(p => !teams[subTidx].pids.includes(p.id))
+    ? sortByPosition(players.filter(p => !teams[subTidx].pids.includes(p.id)))
     : []
 
   const timerColor = timer.status === 'running' ? 'var(--green)' : timer.status === 'overtime' ? 'var(--red)' : 'var(--navy)'
@@ -240,8 +270,21 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
         </div>
       )}
 
+      {/* INICIAR RODADA — enquanto a rodada não começa, é a ação principal.
+          Libera a finalização de partidas/rodada e o prazo de ajuste de scouts. */}
+      {!viewOnly && tmA && tmB && !roundStartedAt && (
+        <div style={{ background:'var(--sur)', border:'1px solid var(--brd)', borderRadius:14, padding:14, marginBottom:12, textAlign:'center' }}>
+          <div style={{ fontSize:13, color:'var(--t2)', marginBottom:10, lineHeight:1.5 }}>
+            A rodada ainda não começou. Inicie para liberar a finalização das partidas e lançar as diárias dos diaristas escalados.
+          </div>
+          <button onClick={startRound} style={{ width:'100%', padding:14, borderRadius:11, background:'var(--green)', color:'#fff', fontSize:15, fontWeight:700 }}>
+            ▶ Iniciar rodada
+          </button>
+        </div>
+      )}
+
       {/* FINALIZAR (logo abaixo do placar) */}
-      {!viewOnly && tmA && tmB && !matchFinished && (
+      {!viewOnly && tmA && tmB && !matchFinished && roundStartedAt && (
         <button onClick={finishMatch} style={{ width:'100%', padding:14, borderRadius:11, background:'var(--red)', color:'#fff', fontSize:15, fontWeight:700, marginBottom:12 }}>
           🏁 Finalizar Partida
         </button>
@@ -385,8 +428,8 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
         </>
       )}
 
-      {/* FINALIZAR RODADA */}
-      {!viewOnly && tmA && tmB && (
+      {/* FINALIZAR RODADA — só disponível com a rodada iniciada */}
+      {!viewOnly && tmA && tmB && roundStartedAt && (
         <button onClick={finishRound} style={{ width:'100%', padding:13, borderRadius:11, marginTop:14, background:'transparent', border:'1.5px solid var(--navy)', color:'var(--navy)', fontSize:14, fontWeight:700 }}>
           🔚 Finalizar rodada
         </button>
@@ -401,16 +444,25 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
         </div>
         {cands.length === 0
           ? <div style={{ padding:16, textAlign:'center', color:'var(--t3)', fontSize:13 }}>Nenhum disponível</div>
-          : cands.map(c => {
+          : cands.map((c, ci) => {
+              // Cabeçalho ao mudar de posição (lista já ordenada por posição).
+              const showHeader = ci === 0 || cands[ci - 1].pos !== c.pos
               return (
-                <button key={c.id} onClick={() => doSub(c.id)}
-                  style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 14px', borderBottom:'1px solid var(--divider)', background:'transparent', textAlign:'left' }}>
-                  <Avatar name={c.name} index={players.indexOf(c)} size={36} fontSize={12} photo={c.photo} />
-                  <div>
-                    <div style={{ fontSize:14, fontWeight:700 }}>{c.name}</div>
-                    <div style={{ fontSize:12, color:'var(--t3)' }}>{c.pos}</div>
-                  </div>
-                </button>
+                <div key={c.id}>
+                  {showHeader && (
+                    <div style={{ padding:'8px 14px 4px', fontSize:10, fontWeight:800, letterSpacing:'.5px', textTransform:'uppercase', color:'var(--t3)', background:'var(--sur2)' }}>
+                      {c.pos}
+                    </div>
+                  )}
+                  <button onClick={() => doSub(c.id)}
+                    style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 14px', borderBottom:'1px solid var(--divider)', background:'transparent', textAlign:'left' }}>
+                    <Avatar name={c.name} index={players.indexOf(c)} size={36} fontSize={12} photo={c.photo} />
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:700 }}>{c.name}{c.guest ? ' 🎟' : ''}</div>
+                      <div style={{ fontSize:12, color:'var(--t3)' }}>{c.pos}</div>
+                    </div>
+                  </button>
+                </div>
               )
             })
         }

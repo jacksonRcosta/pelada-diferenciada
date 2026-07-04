@@ -8,7 +8,7 @@ export async function listMinhasPeladas() {
 
   const { data, error } = await supabase
     .from('peladas')
-    .select('id, nome, cidade, estado, owner_id, created_at, updated_at')
+    .select('id, nome, cidade, estado, horario, local, owner_id, created_at, updated_at')
     .order('created_at', { ascending: false })
   if (error) throw error
 
@@ -24,7 +24,7 @@ export async function listMinhasPeladas() {
   }))
 }
 
-export async function criarPelada(nome, cidade = '', estado = '') {
+export async function criarPelada(nome, cidade = '', estado = '', horario = '', local = '') {
   const { data: userData } = await supabase.auth.getUser()
   const uid = userData?.user?.id
   if (!uid) throw new Error('Sessão inválida')
@@ -35,6 +35,8 @@ export async function criarPelada(nome, cidade = '', estado = '') {
       nome: nome.trim(), owner_id: uid,
       cidade: cidade.trim() || null,
       estado: estado.trim() || null,
+      horario: horario.trim() || null,
+      local: local.trim() || null,
     })
     .select()
     .single()
@@ -49,11 +51,13 @@ export async function criarPelada(nome, cidade = '', estado = '') {
 }
 
 // Atualiza dados cadastrais da pelada (nome / cidade / estado).
-export async function atualizarPelada(id, { nome, cidade, estado }) {
+export async function atualizarPelada(id, { nome, cidade, estado, horario, local }) {
   const campos = { updated_at: new Date().toISOString() }
-  if (nome !== undefined)   campos.nome   = nome.trim()
-  if (cidade !== undefined) campos.cidade = (cidade || '').trim() || null
-  if (estado !== undefined) campos.estado = (estado || '').trim() || null
+  if (nome !== undefined)    campos.nome    = nome.trim()
+  if (cidade !== undefined)  campos.cidade  = (cidade || '').trim() || null
+  if (estado !== undefined)  campos.estado  = (estado || '').trim() || null
+  if (horario !== undefined) campos.horario = (horario || '').trim() || null
+  if (local !== undefined)   campos.local   = (local || '').trim() || null
   const { error } = await supabase.from('peladas').update(campos).eq('id', id)
   if (error) throw error
 }

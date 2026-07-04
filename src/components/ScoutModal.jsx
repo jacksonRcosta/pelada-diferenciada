@@ -4,9 +4,10 @@ import { SCOUTS, CARDS, TEAM_CFG } from '../lib/constants'
 import { calcPoints, ptStyle, ptsLabel, mergeScouts, totalCards } from '../lib/utils'
 import { showToast } from './Toast'
 
-export default function ScoutModal({ pid, players, teams, open, onClose, onScoutChange, onCardChange, viewOnly }) {
+export default function ScoutModal({ pid, players, teams, open, onClose, onScoutChange, onCardChange, viewOnly, locked }) {
   const p = players.find(x => x.id === pid)
   if (!p) return null
+  const readOnly = viewOnly || locked   // prazo expirado bloqueia edição como no modo visualização
   const idx = players.indexOf(p)
   const pt  = calcPoints(p.sc)                                   // pontos da partida atual
   const ptTotal = calcPoints(mergeScouts(p.scTotal, p.sc))       // total temporada + partida
@@ -14,7 +15,7 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
   const tc  = ti >= 0 ? TEAM_CFG[ti % TEAM_CFG.length] : null
 
   function chgScout(sid, delta) {
-    if (viewOnly) return
+    if (readOnly) return
     const cur = p.sc[sid] || 0
     const nxt = Math.max(0, cur + delta)
     const sc = { ...p.sc }
@@ -24,7 +25,7 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
   }
 
   function chgCard(cid, delta) {
-    if (viewOnly) return
+    if (readOnly) return
     const cur = (p.cards || {})[cid] || 0
     const nxt = Math.max(0, cur + delta)
     const cards = { ...(p.cards || {}) }
@@ -52,6 +53,13 @@ export default function ScoutModal({ pid, players, teams, open, onClose, onScout
         </div>
         <button onClick={onClose} style={{ position:'absolute', top:11, right:12, width:30, height:30, borderRadius:'50%', background:'var(--sur3)', color:'var(--t3)', fontSize:16, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
       </div>
+
+      {/* AVISO DE PRAZO */}
+      {locked && !viewOnly && (
+        <div style={{ margin:'10px 14px 0', padding:'9px 12px', borderRadius:10, background:'#FCEBEB', border:'1px solid #E7B4B4', color:'#791F1F', fontSize:12, fontWeight:600, lineHeight:1.4 }}>
+          ⏳ Ajustes encerrados — o prazo para alterar scouts é até as 12:00 do dia seguinte à pelada.
+        </div>
+      )}
 
       {/* SCOUTS */}
       <div style={{ fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'var(--t3)', padding:'10px 14px 4px', background:'var(--sur2)', borderTop:'1px solid var(--divider)', borderBottom:'1px solid var(--divider)' }}>

@@ -132,7 +132,7 @@ export default function DestaquesPage({ state }) {
       <div style={{ background: 'linear-gradient(135deg,var(--navy),var(--navy2))', borderRadius: 14, padding: '13px 15px', marginBottom: 14, color: '#fff' }}>
         <div style={{ fontSize: 16, fontWeight: 800 }}>🔗 Compartilhar Destaques</div>
         <div style={{ fontSize: 12, opacity: .75, marginTop: 3, lineHeight: 1.5 }}>
-          Gere a escalação dos melhores no estilo FIFA. Com foto dos peladeiros, a arte fica ainda melhor!
+          Gere a escalação dos melhores em arte de campo. Com foto dos peladeiros, a arte fica ainda melhor!
         </div>
       </div>
 
@@ -141,7 +141,7 @@ export default function DestaquesPage({ state }) {
       {roundBest.length > 0 ? (
         <>
           <PositionList best={roundBest} />
-          {shareBtn('🏟 Compartilhar Seleção da Rodada (FIFA)', () => shareLineup(roundBest, 'Seleção da Rodada'), true)}
+          {shareBtn('🏟 Compartilhar Seleção da Rodada', () => shareLineup(roundBest, 'Seleção da Rodada'), true)}
         </>
       ) : (
         <div style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', padding: '22px 14px', textAlign: 'center', color: 'var(--t3)', fontSize: 13, marginBottom: 10 }}>
@@ -155,7 +155,7 @@ export default function DestaquesPage({ state }) {
       {seasonBest.length > 0 ? (
         <>
           <PositionList best={seasonBest} />
-          {shareBtn('🏟 Compartilhar Seleção da Temporada (FIFA)', () => shareLineup(seasonBest, 'Seleção da Temporada'), true)}
+          {shareBtn('🏟 Compartilhar Seleção da Temporada', () => shareLineup(seasonBest, 'Seleção da Temporada'), true)}
         </>
       ) : (
         <div style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', padding: '22px 14px', textAlign: 'center', color: 'var(--t3)', fontSize: 13, marginBottom: 10 }}>

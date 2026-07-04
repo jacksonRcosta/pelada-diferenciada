@@ -146,11 +146,17 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
           return (
             <div key={p.id} onClick={() => onOpenScout(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderBottom: i < sorted.length - 1 ? '1px solid var(--divider)' : 'none', cursor: 'pointer' }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: medalColors[medals[i]] || '#ccc', width: 22, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
-              <Avatar name={p.name} index={oi} size={34} fontSize={11} photo={p.photo} />
+              <div style={{ position: 'relative', flexShrink: 0, lineHeight: 0 }}>
+                <Avatar name={p.name} index={oi} size={38} fontSize={12} photo={p.photo} />
+                {tc && (
+                  <span title={teams[ti].name} style={{ position: 'absolute', left: '50%', bottom: -4, transform: 'translateX(-50%)', maxWidth: 46, background: tc.color, color: '#fff', fontSize: 8.5, fontWeight: 800, letterSpacing: '.2px', padding: '1px 5px', borderRadius: 7, border: '1.5px solid var(--sur)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {teams[ti].name.replace(/^Time\s+/i, '')}
+                  </span>
+                )}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                   {p.name}
-                  {tc && <span style={{ background: tc.color, color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 6 }}>{teams[ti].name}</span>}
                   {(p.gamesTotal || 0) > 0 && <span style={{ background: '#eef0f3', color: 'var(--t3)', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 6 }}>⚽ {p.gamesTotal} jogo{p.gamesTotal > 1 ? 's' : ''}</span>}
                 </div>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
@@ -165,7 +171,7 @@ export default function RankingPage({ state, update, onOpenScout, viewOnly }) {
       </div>
 
       <div style={{ background: 'var(--info-bg)', border: '1px solid var(--info-brd)', borderRadius: 12, padding: '11px 13px', marginBottom: 10, fontSize: 12.5, color: 'var(--navy)', lineHeight: 1.5 }}>
-        🏟 Prêmios, melhores por posição, <b>destaques das rodadas</b> e a <b>Seleção estilo FIFA</b> agora estão na aba <b>Destaques</b>.
+        🏟 Prêmios, melhores por posição, <b>destaques das rodadas</b> e a <b>Seleção dos melhores</b> agora estão na aba <b>Destaques</b>.
       </div>
 
       {(seasonHistory || []).length > 0 && (

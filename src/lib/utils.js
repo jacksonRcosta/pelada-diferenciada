@@ -205,3 +205,46 @@ export function seasonEnded(dateEnd) {
   const end = new Date(dateEnd + 'T23:59:59')
   return new Date() > end
 }
+
+// Regra de negócio: os scouts de uma rodada podem ser ajustados até as 12:00
+// do DIA SEGUINTE ao início da rodada (`roundStartedAt`, ISO). Sem rodada
+// iniciada, nada é travado. Retorna true quando o prazo já expirou.
+export function scoutsLocked(roundStartedAt) {
+  if (!roundStartedAt) return false
+  const start = new Date(roundStartedAt)
+  if (isNaN(start)) return false
+  const limit = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1, 12, 0, 0, 0)
+  return new Date() > limit
+}
+
+// Formata um número como moeda brasileira (R$ 1.234,56).
+export function formatBRL(n) {
+  const v = Number(n) || 0
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+// Chave de mês 'AAAA-MM' a partir de uma Date (ou string) — default: agora.
+export function ymOf(d = new Date()) {
+  const dt = d instanceof Date ? d : new Date(d)
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`
+}
+export function ymNow() { return ymOf(new Date()) }
+
+// Data local no formato 'AAAA-MM-DD' a partir de uma Date (ou string).
+export function ymdOf(d = new Date()) {
+  const dt = d instanceof Date ? d : new Date(d)
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+}
+
+// Garante a estrutura financeira com defaults retrocompatíveis (análogo a
+// normalizePlayers). Nunca muta o objeto recebido.
+export function ensureFinance(finance) {
+  const f = finance || {}
+  return {
+    mensalidade: Number(f.mensalidade) || 0,
+    diaria: Number(f.diaria) || 0,
+    cfg: f.cfg && typeof f.cfg === 'object' ? f.cfg : {},
+    mensal: f.mensal && typeof f.mensal === 'object' ? f.mensal : {},
+    diarias: Array.isArray(f.diarias) ? f.diarias : [],
+  }
+}

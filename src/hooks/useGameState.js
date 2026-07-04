@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { loadState, saveState, subscribeToChanges } from '../lib/supabase'
 import { INITIAL_STATE } from '../lib/constants'
+import { ensureFinance } from '../lib/utils'
 
 // Garante que todo jogador tenha os campos da partida atual (sc/cards) e os
 // acumulados da temporada (scTotal/cardsTotal). Migração retrocompatível:
@@ -23,7 +24,12 @@ function normalizePlayers(players) {
 }
 
 function normalizeState(data) {
-  return { ...INITIAL_STATE, ...data, players: normalizePlayers(data.players) }
+  return {
+    ...INITIAL_STATE,
+    ...data,
+    players: normalizePlayers(data.players),
+    finance: ensureFinance(data.finance),
+  }
 }
 
 export function useGameState(peladaId, viewOnly = false) {
