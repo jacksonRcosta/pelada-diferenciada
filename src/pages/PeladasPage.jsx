@@ -11,7 +11,7 @@ const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','P
 
 const localLabel = p => [p.cidade, p.estado].filter(Boolean).join(' / ')
 
-export default function PeladasPage({ onSelect, onLogout }) {
+export default function PeladasPage({ onSelect, onLogout, pendingJoin, onRetryJoin, onDismissJoin }) {
   const { profile, user } = useAuth()
   const [peladas, setPeladas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -139,6 +139,20 @@ export default function PeladasPage({ onSelect, onLogout }) {
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '16px 14px 40px' }}>
         {erro && <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{erro}</div>}
+
+        {/* CONVITE PENDENTE (link de convite ainda não consumido) */}
+        {pendingJoin && (
+          <div style={{ background: '#FFF8E6', border: '1.5px solid var(--gold)', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#7a5800' }}>🎟 Você tem um convite pendente</div>
+            <div style={{ fontSize: 12.5, color: 'var(--t2)', margin: '4px 0 10px', lineHeight: 1.5 }}>
+              Você abriu um link de convite para uma pelada. Toque abaixo para entrar com o acesso concedido pelo dono.
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={onRetryJoin} style={{ background: 'var(--navy)', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Entrar na pelada convidada</button>
+              <button onClick={onDismissJoin} style={{ background: 'transparent', color: 'var(--t3)', border: '1px solid var(--brd)', borderRadius: 9, padding: '9px 12px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Descartar</button>
+            </div>
+          </div>
+        )}
 
         {/* SOLICITAÇÕES RECEBIDAS (dono) */}
         {solic.length > 0 && (

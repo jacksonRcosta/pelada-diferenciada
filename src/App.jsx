@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from './context/AuthContext'
 import { joinByToken } from './data/peladasApi'
+import { showToast } from './components/Toast'
 import LoginPage from './pages/LoginPage'
 import CompletarPerfilPage from './pages/CompletarPerfilPage'
 import PeladasPage from './pages/PeladasPage'
@@ -24,34 +25,78 @@ if (initialJoin) {
   window.history.replaceState({}, '', window.location.pathname)
 }
 
+function readPendingJoin() {
+  try { return localStorage.getItem('pendingJoin') } catch { return null }
+}
+function clearPendingJoin() {
+  try { localStorage.removeItem('pendingJoin') } catch {}
+}
+
 export default function App() {
   const { loading, session, profileComplete, user, signOut } = useAuth()
   const [pelada, setPelada] = useState(null) // { id, nome, role }
   const [joining, setJoining] = useState(false)
+  const [pendingJoin, setPendingJoin] = useState(readPendingJoin)
+  const triedRef = useRef(false) // evita reprocessar o mesmo convite em loop
 
   // Consome um convite pendente assim que há sessão + perfil completo.
+  // Só remove o token em caso de SUCESSO — assim uma falha transitória não
+  // perde o convite; o usuário consegue tentar de novo pela tela de Peladas.
   useEffect(() => {
-    if (!session || !profileComplete || pelada) return
-    let pending
-    try { pending = localStorage.getItem('pendingJoin') } catch {}
-    if (!pending) return
+    if (!session || !profileComplete || pelada || !pendingJoin || triedRef.current) return
+    triedRef.current = true
     setJoining(true)
-    joinByToken(pending)
+    joinByToken(pendingJoin)
       .then(res => {
-        if (res && res.pelada_id) setPelada({ id: res.pelada_id, nome: res.nome, role: res.role })
+        if (!res || !res.pelada_id) throw new Error('convite não retornou a pelada')
+        clearPendingJoin()
+        setPendingJoin(null)
+        setPelada({ id: res.pelada_id, nome: res.nome, role: res.role })
       })
-      .catch(err => console.warn('joinByToken:', err.message))
-      .finally(() => {
-        try { localStorage.removeItem('pendingJoin') } catch {}
-        setJoining(false)
+      .catch(err => {
+        console.warn('joinByToken:', err.message)
+        showToast('Não foi possível entrar pelo convite: ' + err.message)
+        // Mantém o token: a PeladasPage oferece "Entrar na pelada convidada".
       })
-  }, [session, profileComplete, pelada])
+      .finally(() => setJoining(false))
+  }, [session, profileComplete, pelada, pendingJoin])
+
+  // Nova tentativa manual (banner da PeladasPage). Ao dar certo, abre a pelada.
+  async function retryJoin() {
+    const token = pendingJoin || readPendingJoin()
+    if (!token) return
+    setJoining(true)
+    try {
+      const res = await joinByToken(token)
+      if (!res || !res.pelada_id) throw new Error('convite não retornou a pelada')
+      clearPendingJoin()
+      setPendingJoin(null)
+      setPelada({ id: res.pelada_id, nome: res.nome, role: res.role })
+    } catch (err) {
+      showToast('Não foi possível entrar pelo convite: ' + err.message)
+    } finally {
+      setJoining(false)
+    }
+  }
+
+  function dismissJoin() {
+    clearPendingJoin()
+    setPendingJoin(null)
+  }
 
   if (loading) return <Splash texto="Carregando..." />
   if (!session) return <LoginPage />
   if (!profileComplete) return <CompletarPerfilPage />
   if (joining) return <Splash texto="Entrando na pelada..." />
-  if (!pelada) return <PeladasPage onSelect={setPelada} onLogout={signOut} />
+  if (!pelada) return (
+    <PeladasPage
+      onSelect={setPelada}
+      onLogout={signOut}
+      pendingJoin={pendingJoin}
+      onRetryJoin={retryJoin}
+      onDismissJoin={dismissJoin}
+    />
+  )
 
   return (
     <GameShell

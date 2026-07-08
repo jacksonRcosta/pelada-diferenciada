@@ -43,11 +43,31 @@ export default function TimesPage({ state, update, viewOnly }) {
   }
 
   function move(pid, toIdx) {
-    const nt = teams.map(t => ({ ...t, pids: t.pids.filter(id => id !== pid) }))
-    nt[toIdx].pids.push(pid)
+    const p = players.find(x => x.id === pid)
+    const guest = !!p?.guest
+    // Convidado NÃO entra escalado: fica no banco (reserva) do time. Para jogar,
+    // o dono o substitui por um peladeiro na aba Partida. Peladeiro entra titular.
+    const nt = teams.map(t => ({
+      ...t,
+      pids: t.pids.filter(id => id !== pid),
+      bench: (t.bench || []).filter(id => id !== pid),
+    }))
+    if (guest) nt[toIdx].bench = [...(nt[toIdx].bench || []), pid]
+    else nt[toIdx].pids.push(pid)
+    update({ teams: nt })
+    showToast(`${p?.name} → ${nt[toIdx].name}${guest ? ' (reserva)' : ''}`)
+  }
+
+  // Remove o jogador de qualquer time (volta para "Sem time").
+  function removeFromTeam(pid) {
+    const nt = teams.map(t => ({
+      ...t,
+      pids: t.pids.filter(id => id !== pid),
+      bench: (t.bench || []).filter(id => id !== pid),
+    }))
     const p = players.find(x => x.id === pid)
     update({ teams: nt })
-    showToast(`${p?.name} → ${nt[toIdx].name}`)
+    showToast(`${p?.name} saiu do time`)
   }
 
   async function setTeamImg(idx, file) {
@@ -65,8 +85,9 @@ export default function TimesPage({ state, update, viewOnly }) {
     update({ teams: teams.map((t, i) => i === idx ? { ...t, img: null } : t) })
   }
 
-  // Jogadores cadastrados que ainda não pertencem a nenhum time.
-  const unassigned = teams ? players.filter(p => !teams.some(t => t.pids.includes(p.id))) : []
+  // Jogadores cadastrados que ainda não pertencem a nenhum time (titular ou reserva).
+  const inTeam = pid => teams.some(t => t.pids.includes(pid) || (t.bench || []).includes(pid))
+  const unassigned = teams ? players.filter(p => !inTeam(p.id)) : []
 
   const inp = { padding: '11px 12px', fontSize: 16, border: '1.5px solid var(--brd)', borderRadius: 10, background: 'var(--sur2)', color: 'var(--txt)', textAlign: 'center' }
   const lbl = { display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: '.8px', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 5 }
@@ -110,6 +131,7 @@ export default function TimesPage({ state, update, viewOnly }) {
           {teams.map((tm, t) => {
             const tc = TEAM_CFG[t % TEAM_CFG.length]
             const pls = sortByPosition(tm.pids.map(id => players.find(p => p.id === id)).filter(Boolean))
+            const bench = sortByPosition((tm.bench || []).map(id => players.find(p => p.id === id)).filter(Boolean))
             const tp = pls.reduce((s, p) => s + calcPoints(p.scTotal), 0)
             return (
               <div key={t} style={{ borderRadius: 14, border: `2px solid ${tc.color}`, marginBottom: 12, overflow: 'hidden', background: tc.bg }}>
@@ -159,6 +181,31 @@ export default function TimesPage({ state, update, viewOnly }) {
                     </div>
                   )
                 })}
+                {bench.length > 0 && (
+                  <>
+                    <div style={{ padding: '6px 13px', fontSize: 10, fontWeight: 800, letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--t3)', background: 'var(--sur2)', borderTop: '1px dashed var(--brd)' }}>
+                      🔄 Reservas ({bench.length}) · entram por substituição
+                    </div>
+                    {bench.map(p => (
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderTop: '1px solid var(--divider)', background: 'var(--sur2)' }}>
+                        <Avatar name={p.name} index={players.indexOf(p)} size={34} fontSize={11} photo={p.photo} />
+                        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.guest ? '🎟 ' : ''}{p.pos} · reserva</div></div>
+                        {!viewOnly && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            {teams.map((_, k) => k !== t && (
+                              <button key={k} onClick={() => move(p.id, k)} style={{ background: 'var(--sur3)', border: '1px solid var(--brd)', color: 'var(--t2)', borderRadius: 7, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>
+                                → {teams[k].name}
+                              </button>
+                            ))}
+                            <button onClick={() => removeFromTeam(p.id)} style={{ background: '#fce8e8', color: 'var(--red)', border: '1px solid #f0c9c9', borderRadius: 7, fontSize: 11, fontWeight: 700, padding: '5px 9px' }}>
+                              ✕ Tirar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             )
           })}

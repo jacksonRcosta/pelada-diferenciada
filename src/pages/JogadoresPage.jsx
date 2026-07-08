@@ -156,6 +156,11 @@ export default function JogadoresPage({ state, update, viewOnly }) {
               <input type="checkbox" checked={isGuest} onChange={e => setIsGuest(e.target.checked)} style={{ width: 18, height: 18 }} />
               🎟 Convidado (vale só nesta rodada)
             </label>
+            {isGuest && (
+              <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 6, lineHeight: 1.5 }}>
+                O convidado entra como <b>reserva</b> do time (aba Times) — não fica escalado. Para colocá-lo em campo, faça uma <b>substituição</b> por um peladeiro na aba Partida.
+              </div>
+            )}
             <button
               onClick={add}
               style={{
