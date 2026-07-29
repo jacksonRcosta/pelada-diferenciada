@@ -148,14 +148,30 @@ export default function PartidaPage({ state, update, viewOnly, onOpenScout }) {
     }
     const aggList = Object.values(agg).map(e => ({ ...e, pts: calcPoints(e.sc) }))
     const ranked = rankByScout(aggList)
+    // Estatística por jogador da rodada (gols + assistências), para o Histórico
+    // de peladas. Considera todos que pontuaram/marcaram, ordenados por pontos.
+    const playersStats = aggList
+      .map(e => ({
+        name: e.name,
+        pos: e.pos,
+        gols: (e.sc.gol || 0) + (e.sc.golplaca || 0),
+        assist: e.sc.assistencia || 0,
+        pts: e.pts,
+        games: gamesById[e.id] || 0,
+      }))
+      .sort((a, b) => b.pts - a.pts)
     const roundEntry = {
       endedAt: new Date().toISOString(),
+      startedAt: roundStartedAt || null,
       games: (matchHistory || []).length,
       mvp: ranked[0] ? { name: ranked[0].name, pos: ranked[0].pos, sc: ranked[0].sc, pts: ranked[0].pts, games: gamesById[ranked[0].id] || 0 } : null,
       top: ranked.slice(0, 5).map(e => ({ name: e.name, pos: e.pos, sc: e.sc, pts: e.pts, games: gamesById[e.id] || 0 })),
       matches: (matchHistory || []).map(m => ({ nmA: m.nmA, nmB: m.nmB, sA: m.sA, sB: m.sB })),
+      players: playersStats,
     }
-    const newRoundHistory = roundEntry.mvp
+    // Guarda a rodada no histórico sempre que houve ao menos um jogo (mesmo sem
+    // scouts marcados — os placares valem por si).
+    const newRoundHistory = roundEntry.games > 0
       ? [roundEntry, ...(roundHistory || [])]
       : (roundHistory || [])
 

@@ -44,4 +44,7 @@ export const INITIAL_STATE = {
   roundHistory: [], seasonHistory: [],
   roundStartedAt: null,
   finance: INITIAL_FINANCE,
+  // Lista de espera (FIFO): convidados aguardando ficar aptos a jogar.
+  // Cada item: { id, name, pos, at } — 'at' (ISO) preserva a ordem de chegada.
+  waitlist: [],
 }

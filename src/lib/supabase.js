@@ -38,6 +38,7 @@ export async function saveState(peladaId, obj) {
     seasonHistory: Array.isArray(obj.seasonHistory) ? obj.seasonHistory : [],
     roundStartedAt: obj.roundStartedAt || null,
     finance: obj.finance || { mensalidade: 0, diaria: 0, cfg: {}, mensal: {}, diarias: [] },
+    waitlist: Array.isArray(obj.waitlist) ? obj.waitlist : [],
   }
 
   const { error } = await supabase

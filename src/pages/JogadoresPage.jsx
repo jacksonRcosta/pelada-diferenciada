@@ -13,8 +13,11 @@ export default function JogadoresPage({ state, update, viewOnly }) {
   const [photo, setPhoto] = useState(null)
   const [editPid, setEditPid] = useState(null)
   const [editPos, setEditPos] = useState('Atacante')
+  const [waitName, setWaitName] = useState('')
+  const [waitPos, setWaitPos] = useState('Atacante')
 
   const POSITIONS = ['Atacante', 'Meia', 'Lateral', 'Zagueiro', 'Goleiro']
+  const waitlist = state.waitlist || []
 
   // Lê a foto escolhida, redimensiona (128px, JPEG) e devolve o dataURL via cb.
   async function readPhoto(file, cb) {
@@ -63,13 +66,9 @@ export default function JogadoresPage({ state, update, viewOnly }) {
       cardsTotal: {}
     }
 
-    console.log('Adicionando player:', JSON.stringify(newPlayer))
-
     // Construir a lista nova AQUI também
     const newPlayers = [...players, newPlayer]
     const newNextId = state.nextId + 1
-
-    console.log('Nova lista de players:', JSON.stringify(newPlayers))
 
     // Chamar update com os valores já calculados
     update({
@@ -80,6 +79,50 @@ export default function JogadoresPage({ state, update, viewOnly }) {
     setName('')
     setPhoto(null)
     showToast((isGuest ? '🎟 Convidado ' : '✓ ') + trimmedName + ' adicionado!')
+  }
+
+  // --- Lista de espera (FIFO) -------------------------------------------
+  // Convidados aguardam por ordem de chegada. Ao ficarem "aptos", viram um
+  // player com guest=true (segue o fluxo normal de reserva na aba Times).
+  function addToWaitlist() {
+    const nm = waitName.trim()
+    if (!nm) { showToast('Digite o nome do convidado'); return }
+    if (players.some(p => p.name.toLowerCase() === nm.toLowerCase())) {
+      showToast('Já existe um peladeiro com esse nome'); return
+    }
+    if (waitlist.some(w => w.name.toLowerCase() === nm.toLowerCase())) {
+      showToast('Esse nome já está na lista de espera'); return
+    }
+    const item = { id: 'w' + Date.now(), name: nm, pos: waitPos, at: new Date().toISOString() }
+    update({ waitlist: [...waitlist, item] })   // sempre no fim da fila (FIFO)
+    setWaitName('')
+    showToast('🕒 ' + nm + ' entrou na lista de espera')
+  }
+
+  function promoteFromWaitlist(id) {
+    const item = waitlist.find(w => w.id === id)
+    if (!item) return
+    if (players.some(p => p.name.toLowerCase() === item.name.toLowerCase())) {
+      showToast('Já existe um peladeiro com esse nome')
+      update({ waitlist: waitlist.filter(w => w.id !== id) })
+      return
+    }
+    const newPlayer = {
+      id: state.nextId, name: item.name, pos: item.pos || 'Atacante',
+      guest: true, photo: null, sc: {}, cards: {}, scTotal: {}, cardsTotal: {},
+    }
+    update({
+      players: [...players, newPlayer],
+      nextId: state.nextId + 1,
+      waitlist: waitlist.filter(w => w.id !== id),
+    })
+    showToast('🎟 ' + item.name + ' está apto! Adicionado como convidado.')
+  }
+
+  function removeFromWaitlist(id) {
+    const item = waitlist.find(w => w.id === id)
+    update({ waitlist: waitlist.filter(w => w.id !== id) })
+    showToast((item?.name || 'Nome') + ' saiu da lista de espera')
   }
 
   function del(pid) {
@@ -174,6 +217,59 @@ export default function JogadoresPage({ state, update, viewOnly }) {
           </div>
         </>
       )}
+
+      {/* LISTA DE ESPERA (FIFO) — convidados aguardando vaga, por ordem de chegada */}
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 7 }}>
+        🕒 Lista de espera ({waitlist.length})
+      </div>
+      <div style={{ background: 'var(--sur)', borderRadius: 14, border: '1px solid var(--brd)', padding: 14, marginBottom: 14 }}>
+        <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 10, lineHeight: 1.5 }}>
+          Convidados aguardando vaga, por <b>ordem de chegada</b>. Ao ficar apto, entra como <b>🎟 convidado</b>.
+        </div>
+        {!viewOnly && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: waitlist.length ? 12 : 0 }}>
+            <input
+              value={waitName}
+              onChange={e => setWaitName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addToWaitlist()}
+              placeholder="Nome do convidado"
+              maxLength={24}
+              style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
+              autoComplete="off"
+            />
+            <select value={waitPos} onChange={e => setWaitPos(e.target.value)} style={{ ...inputStyle, marginBottom: 0, width: 116 }}>
+              {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <button onClick={addToWaitlist} style={{ padding: '0 15px', borderRadius: 10, background: '#B7770D', color: '#fff', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
+              + Fila
+            </button>
+          </div>
+        )}
+        {waitlist.length === 0
+          ? <div style={{ fontSize: 12, color: 'var(--t3)', textAlign: 'center', padding: '6px 0' }}>Ninguém na lista de espera.</div>
+          : waitlist.map((w, i) => (
+            <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderTop: i ? '1px solid var(--divider)' : 'none' }}>
+              <span style={{ minWidth: 30, height: 26, padding: '0 6px', borderRadius: 13, background: 'var(--sur3)', color: 'var(--t2)', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}º</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>{w.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--t3)' }}>{w.pos}</div>
+              </div>
+              {!viewOnly && (
+                <>
+                  <button onClick={() => promoteFromWaitlist(w.id)} title="Tornar apto (vira convidado)"
+                    style={{ background: '#E1F5EE', color: '#085041', border: '1px solid #1D9E7533', borderRadius: 8, fontSize: 12, fontWeight: 700, padding: '7px 10px' }}>
+                    ✓ Apto
+                  </button>
+                  <button onClick={() => removeFromWaitlist(w.id)} title="Remover da lista"
+                    style={{ background: '#fce8e8', color: 'var(--red)', borderRadius: 8, fontSize: 12, fontWeight: 700, padding: '7px 10px' }}>
+                    ✕
+                  </button>
+                </>
+              )}
+            </div>
+          ))
+        }
+      </div>
 
       <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--t3)', marginBottom: 7 }}>
         Cadastrados ({players.length})

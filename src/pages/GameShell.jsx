@@ -13,6 +13,7 @@ import TimesPage from './TimesPage'
 import JogadoresPage from './JogadoresPage'
 import RankingPage from './RankingPage'
 import DestaquesPage from './DestaquesPage'
+import HistoricoPage from './HistoricoPage'
 import LOGO from '../lib/logo'
 
 const TABS = [
@@ -22,6 +23,7 @@ const TABS = [
   { id: 'jogadores', label: 'Peladeiros' },
   { id: 'ranking',   label: 'Ranking'    },
   { id: 'destaques', label: 'Destaques'  },
+  { id: 'historico', label: 'Histórico'  },
 ]
 
 // UI principal do jogo, agora escopada a uma pelada (peladaId).
@@ -148,6 +150,7 @@ export default function GameShell({ peladaId, peladaNome, role = 'owner', meuId,
         {tab === 'jogadores' && <JogadoresPage state={state} update={update} viewOnly={isViewer} />}
         {tab === 'ranking'   && <RankingPage   state={state} update={update} viewOnly={isViewer} onOpenScout={openScoutFromRanking} />}
         {tab === 'destaques' && <DestaquesPage state={state} />}
+        {tab === 'historico' && <HistoricoPage state={state} />}
       </div>
 
       <ScoutModal
